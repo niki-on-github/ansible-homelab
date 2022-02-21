@@ -1,0 +1,51 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
+
+Vagrant.configure(2) do |config|
+
+  $opnsense_bootstrap_vagrant_box = '{{ opnsense_bootstrap_vagrant_box }}'
+  $opnsense_release = '{{ opnsense_release }}'
+
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+  config.ssh.shell = '/bin/sh'
+  config.ssh.keep_alive = true
+  config.vm.box = $opnsense_bootstrap_vagrant_box
+
+  config.vm.network :public_network,
+      :dev => "{{ kvm_bridge_name }}",
+      :mode => "bridge",
+      :type => "bridge"
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.cpus = "2"
+    libvirt.cputopology :sockets => '1', :cores => "2", :threads => '1'
+    libvirt.nested = true
+    libvirt.memory = 2048
+    libvirt.machine_virtual_size = 32
+    libvirt.graphics_type = "vnc"
+    libvirt.video_type = "virtio"
+    {{ opnsense_usb_dev | default('')  }}
+    {{ opnsense_pci_dev | default('') | indent(width=4, first=False) }}
+  end
+
+  # Bootstrap OPNsense
+  config.vm.provision 'shell', inline: <<-SHELL
+    fetch -o opnsense-bootstrap.sh https://raw.githubusercontent.com/opnsense/update/master/src/bootstrap/opnsense-bootstrap.sh.in
+    sed -i '' -e '/reboot$/d' opnsense-bootstrap.sh
+    sh ./opnsense-bootstrap.sh -r #{$opnsense_release} -y
+
+    # Fix login after bootstrap script
+    chsh -s /bin/sh root
+    chsh -s /bin/sh vagrant
+  SHELL
+
+  # Configure OPNsense
+  config.vm.provision :ansible do |ansible|
+    ansible.verbose = "v"
+    ansible.galaxy_role_file = 'ansible/requirements.yml'
+    ansible.playbook = "ansible/playbook.yml"
+  end
+
+end

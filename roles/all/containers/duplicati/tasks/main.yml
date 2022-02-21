@@ -1,0 +1,38 @@
+---
+- name: "Create duplicati directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/duplicati"
+    - "{{ docker_recipes }}/duplicati/container"
+    - "{{ docker_data }}/duplicati"
+    - "{{ docker_data }}/duplicati/scripts"
+    - "{{ docker_data }}/duplicati/config"
+
+- name: "Generate duplicati scripts"
+  template:
+    src: "{{ item }}"
+    dest: "{{ docker_data }}/duplicati/scripts/{{ item | basename | regex_replace('\\.j2$', '') }}"
+    owner: "{{ username }}"
+    group: "docker"
+    mode: 0755
+  with_fileglob:
+    - templates/*.sh.j2
+
+- name: "Generate duplicati docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/duplicati/docker-compose.yml"
+
+- name: "Generate duplicati docker build file"
+  template:
+    src: Dockerfile.j2
+    dest: "{{ docker_recipes }}/duplicati/container/Dockerfile"
+
+- name: "Deploy duplicati"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/duplicati'
+    files:
+    - docker-compose.yml

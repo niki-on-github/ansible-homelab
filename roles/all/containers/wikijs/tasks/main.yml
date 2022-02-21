@@ -1,0 +1,27 @@
+---
+- name: "Create wikijs directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/wikijs"
+    - "{{ docker_data }}/wikijs"
+    - "{{ docker_data }}/wikijs/database"
+
+- name: "Generate wikijs docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/wikijs/docker-compose.yml"
+
+- name: "Generate wikijs docker-compose environment variables file"
+  template:
+    src: env.j2
+    dest: "{{ docker_recipes }}/wikijs/.env"
+    force: no
+
+- name: "Deploy wikijs"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/wikijs'
+    files:
+    - docker-compose.yml

@@ -1,0 +1,27 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  homeassistant:
+    image: "homeassistant/home-assistant:stable"
+    container_name: homeassistant
+    restart: unless-stopped
+    environment:
+      TZ: "{{ timezone }}"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.homeassistant.middlewares: "iframe-header@file"
+      traefik.http.routers.homeassistant.tls: "true"
+      traefik.http.routers.homeassistant.rule: "Host(`homeassistant.{{ domain }}`)"
+      traefik.http.routers.homeassistant.service: "homeassistant"
+      traefik.http.services.homeassistant.loadbalancer.server.port: "8123"
+    volumes:
+      - "{{docker_data}}/homeassistant:/config"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - default

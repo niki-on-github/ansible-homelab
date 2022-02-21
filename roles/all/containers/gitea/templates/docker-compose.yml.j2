@@ -1,0 +1,40 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  gitea:
+    image: gitea/gitea:1
+    container_name: gitea
+    restart: unless-stopped
+    environment:
+      USER_UID: "{{uid}}"
+      USER_GID: "{{gid}}"
+      SSH_LISTEN_PORT: 22
+      SSH_PORT: 222
+      LFS_START_SERVER: "true"
+      APP_NAME: "Gitea"
+      DOMAIN: "git.{{ domain }}"
+      SSH_DOMAIN: "git.local"
+      DISABLE_REGISTRATION: "true"
+      REQUIRE_SIGNIN_VIEW: "true"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.git.middlewares: "iframe-header@file"
+      traefik.http.routers.git.tls: "true"
+      traefik.http.routers.git.rule: "Host(`git.{{ domain }}`)"
+      traefik.http.routers.git.service: "git"
+      traefik.http.services.git.loadbalancer.server.port: "3000"
+    volumes:
+      - "{{docker_data}}/gitea:/data"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - default
+    ports:
+      - "3000:3000"
+      - "222:22"

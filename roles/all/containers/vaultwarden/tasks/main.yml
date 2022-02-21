@@ -1,0 +1,20 @@
+---
+- name: "Create vaultwarden directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/vaultwarden"
+    - "{{ docker_data }}/vaultwarden"
+
+- name: "Generate vaultwarden docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/vaultwarden/docker-compose.yml"
+
+- name: "Deploy vaultwarden"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/vaultwarden'
+    files:
+    - docker-compose.yml

@@ -1,0 +1,8 @@
+[Unit]
+Description=Backup
+
+[Service]
+Type=simple
+ExecStart={{ backup_script }}
+User=root
+Group=root

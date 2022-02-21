@@ -1,0 +1,10 @@
+[Unit]
+Description=Scheduled backup
+
+[Timer]
+OnCalendar={{ backup_day }} {{ backup_time }}
+AccuracySec=1h
+Persistent=true
+
+[Install]
+WantedBy=timers.target

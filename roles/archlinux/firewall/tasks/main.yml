@@ -1,0 +1,13 @@
+---
+- block:
+  # root
+
+  # Warning: Docker bypass the UFW rules and the published ports can be accessed from outside!
+
+  - name: "Install Firewall"
+    include_tasks: install.yml
+
+  - name: "Configure Firewall"
+    include_tasks: configure.yml
+
+  become: yes

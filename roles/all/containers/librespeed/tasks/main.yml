@@ -1,0 +1,20 @@
+---
+- name: "Create librespeed directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/librespeed"
+    - "{{ docker_data }}/librespeed"
+
+- name: "Generate librespeed docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/librespeed/docker-compose.yml"
+
+- name: "Deploy librespeed"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/librespeed'
+    files:
+    - docker-compose.yml

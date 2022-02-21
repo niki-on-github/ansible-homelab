@@ -1,0 +1,20 @@
+---
+- name: "Create portainer directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/portainer"
+    - "{{ docker_data }}/portainer"
+
+- name: "Generate portainer docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/portainer/docker-compose.yml"
+
+- name: "Deploy portainer"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/portainer'
+    files:
+    - docker-compose.yml

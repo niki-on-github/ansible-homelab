@@ -1,0 +1,29 @@
+---
+- block:
+
+  - name: 'Enable IPv4 forwarding'
+    template:
+      src: "99-sysctl.conf.j2"
+      dest: "/etc/sysctl.d/99-sysctl.conf"
+      owner: "root"
+      group: "root"
+
+  - name: 'Generate KVM Bridge Config'
+    template:
+      src: "{{ item }}"
+      dest: "/etc/systemd/network/{{ item | basename | regex_replace('\\.j2$', '') }}"
+      owner: "root"
+      group: "root"
+    with_items:
+      - "kvm-bridge.netdev.j2"
+      - "bind.network.j2"
+      - "kvm-bridge.network.j2"
+
+  # TODO: maybe activate after restart to avoid ip change when ansible is running
+  - name: 'Enable systemd-networkd systemd service'
+    ansible.builtin.systemd:
+      name: 'systemd-networkd'
+      enabled: true
+      state: 'started'
+
+  become: yes

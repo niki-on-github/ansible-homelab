@@ -1,0 +1,28 @@
+---
+- name: "Create nextcloud directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/nextcloud"
+    - "{{ docker_data }}/nextcloud"
+    - "{{ docker_data }}/nextcloud/data"
+    - "{{ docker_data }}/nextcloud/database"
+
+- name: "Generate nextcloud docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/nextcloud/docker-compose.yml"
+
+- name: "Generate nextcloud docker-compose environment variables file"
+  template:
+    src: env.j2
+    dest: "{{ docker_recipes }}/nextcloud/.env"
+    force: no
+
+- name: "Deploy nextcloud"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/nextcloud'
+    files:
+    - docker-compose.yml

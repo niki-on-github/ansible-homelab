@@ -1,0 +1,129 @@
+---
+  - hosts: all
+    become: yes
+    tasks:
+      - name: "Install dependencies"
+        community.general.pkgng:
+          name: py38-lxml
+          state: present
+
+      - name: "Set WAN interface to {{ opnsense_wan_interface }}"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/interfaces/wan/if"
+          value: "{{ opnsense_wan_interface }}"
+          pretty_print: yes
+
+      - name: "Set LAN interface to {{ opnsense_lan_interface }}"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/interfaces/lan/if"
+          value: "{{ opnsense_lan_interface }}"
+          pretty_print: yes
+
+      - name: "Set LAN ip to {{ opnsense_ip }}"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/interfaces/lan/ipaddr"
+          value: "{{ opnsense_ip }}"
+          pretty_print: yes
+
+      - name: "Set LAN subnet to {{ opnsense_subnet }}"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/interfaces/lan/subnet"
+          value: "{{ opnsense_subnet }}"
+          pretty_print: yes
+
+      - name: "Remove IPv6 configuration from WAN"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/interfaces/wan/{{ '{{' }} item {{ '}}' }}"
+          value: ""
+          pretty_print: yes
+        with_items:
+        - "ipaddrv6"
+
+      - name: "Remove IPv6 configuration from LAN"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/interfaces/lan/{{ '{{' }} item {{ '}}' }}"
+          value: ""
+          pretty_print: yes
+        with_items:
+        - "ipaddrv6"
+        - "subnetv6"
+        - "track6-interface"
+        - "track6-prefix-id"
+
+      - name: "Enable DHCP on LAN"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/dhcpd/lan/enable"
+          value: "1"
+          pretty_print: yes
+        when: {{ opnsense_dhcp_server_enabled }}
+
+      - name: "Configure DHCP Server range from {{ opnsense_dhcp_range_start }}"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/dhcpd/lan/range/from"
+          value: "{{ opnsense_dhcp_range_start }}"
+          pretty_print: yes
+
+      - name: "Configure DHCP Server range to {{ opnsense_dhcp_range_end }}"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/dhcpd/lan/range/to"
+          value: "{{ opnsense_dhcp_range_end }}"
+          pretty_print: yes
+
+      - name: "Get SSH key"
+        ansible.builtin.shell:
+          cmd: b64encode -r dummy </usr/home/vagrant/.ssh/authorized_keys | tr -d '\n'
+        register: ssh_key
+
+      - name: "Add vagrant user to opnsense"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: /opnsense/system
+          pretty_print: yes
+          add_children:
+            - user:
+                _:
+                  - name: vagrant
+                  - descr: Vagrant User
+                  - scope: system
+                  - groupname: admins
+                  - password: "*"
+                  - uid: "1001"
+                  - shell: "/bin/sh"
+                  - authorizedkeys: "{{ '{{' }} ssh_key.stdout_lines[0] {{ '}}' }}"
+
+      - name: "Add Vagrant user to admins group"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: /opnsense/system/group
+          pretty_print: yes
+          add_children:
+          - member: "1001"
+
+      - name: "Enable SSH"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: /opnsense/system/ssh
+          pretty_print: yes
+          add_children:
+          - enabled: "enabled"
+
+      - name: "Add community repository"
+        ansible.builtin.shell:
+          cmd: fetch -o /usr/local/etc/pkg/repos/mimugmail.conf https://www.routerperformance.net/mimugmail.conf
+
+      - name: "Write all changes to storage"
+        ansible.builtin.shell:
+          cmd: sync
+
+      - name: "Reboot"
+        ansible.builtin.shell:
+          cmd: shutdown -r +1

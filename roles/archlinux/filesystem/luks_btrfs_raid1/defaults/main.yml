@@ -1,0 +1,5 @@
+keyfile: "/disk.key"
+dev1_name: "crypt_01"
+dev2_name: "crypt_02"
+btrfs_mount_opts: "defaults,ssd,noatime,compress=lzo"
+btrfs_subvol_name: "@data"

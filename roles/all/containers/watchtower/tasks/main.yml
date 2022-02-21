@@ -1,0 +1,19 @@
+---
+- name: "Create watchtower directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/watchtower"
+
+- name: "Generate watchtower docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/watchtower/docker-compose.yml"
+
+- name: "Deploy watchtower"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/watchtower'
+    files:
+    - docker-compose.yml

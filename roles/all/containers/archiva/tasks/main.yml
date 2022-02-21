@@ -1,0 +1,20 @@
+---
+- name: "Create archiva directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/archiva"
+    - "{{ docker_data }}/archiva"
+
+- name: "Generate archiva docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/archiva/docker-compose.yml"
+
+- name: "Deploy archiva"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/archiva'
+    files:
+    - docker-compose.yml

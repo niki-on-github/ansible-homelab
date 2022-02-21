@@ -1,0 +1,32 @@
+---
+- name: "Create samba directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/samba"
+    - "{{ docker_data }}/samba"
+    - "{{ docker_temp }}/samba"
+    - "{{ docker_temp }}/samba/music"
+    - "{{ docker_temp }}/samba/movies"
+    - "{{ docker_temp }}/samba/series"
+    - "{{ docker_temp }}/samba/pictures"
+
+- name: "Generate samba docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/samba/docker-compose.yml"
+
+- name: "Generate samba config"
+  template:
+    src: "{{ item }}"
+    dest: "{{ docker_data }}/samba/{{ item | basename | regex_replace('\\.j2$', '') }}"
+  with_items:
+    - "config.yml.j2"
+
+- name: "Deploy samba"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/samba'
+    files:
+    - docker-compose.yml

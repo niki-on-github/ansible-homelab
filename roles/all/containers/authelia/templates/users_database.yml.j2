@@ -1,0 +1,21 @@
+---
+###############################################################
+#                         Users Database                      #
+###############################################################
+
+# This file can be used if you do not have an LDAP set up.
+
+# Generate Passords with:
+# ~$ docker run authelia/authelia:latest authelia hash-password 'yourpassword'
+
+# List of users
+users:
+  root:
+    displayname: "Admin"
+    # Password is Geheim
+    password: "$argon2id$v=19$m=65536,t=1,p=8$TVVudXdWNzRxSGp5cUxUYQ$OB2aKscCLmPvsaNL9fpQHV6yXO5LreFKw9jU/4Uvcfo"
+    email: admin@local
+    groups:
+      - admins
+      - dev
+...

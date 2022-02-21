@@ -1,0 +1,12 @@
+---
+- hosts: archlinux
+  roles:
+
+    # system
+    - role: archlinux/system
+    - role: archlinux/docker
+    - role: archlinux/kvm
+    - role: archlinux/network/kvm-bridge
+
+    # VMs
+    - role: all/vms/opnsense

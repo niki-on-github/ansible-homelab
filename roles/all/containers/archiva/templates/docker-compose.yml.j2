@@ -1,0 +1,24 @@
+version: '3'
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  archiva:
+    image: xetusoss/archiva
+    container_name: archiva
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.archiva.middlewares: "iframe-header@file"
+      traefik.http.routers.archiva.tls: "true"
+      traefik.http.routers.archiva.rule: "Host(`archiva.{{ domain }}`)"
+      traefik.http.routers.archiva.service: "archiva"
+      traefik.http.services.archiva.loadbalancer.server.port: "8080"
+    networks:
+      - default
+    volumes:
+        - "{{ docker_data }}/archiva:/archiva-data"

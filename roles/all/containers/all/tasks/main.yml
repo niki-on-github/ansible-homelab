@@ -1,0 +1,18 @@
+---
+- name: "Get list of container roles"
+  delegate_to: localhost
+  become: no
+  find:
+    paths:
+      - "{{ role_path }}/.."
+    file_type: directory
+    recurse: no
+    excludes: 'all'
+  register: containers
+
+- include_role:
+    name: "{{ container_item.path }}"
+  with_items: "{{ containers.files }}"
+  loop_control:
+    loop_var: container_item
+

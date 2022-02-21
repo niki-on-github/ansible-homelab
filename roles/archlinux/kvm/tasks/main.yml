@@ -1,0 +1,143 @@
+---
+- block:
+  # root
+
+  - name: 'Uninstall conflicting Packages'
+    package:
+      name:
+        - iptables
+      state: absent
+      force: true
+
+  - name: 'Uninstall conflicting Python Packages'
+    pip:
+      name: "{{ item }}"
+      state: absent
+    with_items:
+      - "bcrypt"
+      - "jinja"
+      - "paramiko"
+      - "pynacl"
+
+  - name: 'Install KVM'
+    package:
+      name:
+        - ansible-core
+        - bridge-utils
+        - cockpit
+        - cockpit-machines
+        - cockpit-pcp
+        - cockpit-podman
+        - dmidecode
+        - dnsmasq
+        - ebtables
+        - gnu-netcat
+        - iptables-nft
+        - libvirt
+        - netctl
+        - ovmf
+        - packagekit
+        - python-vagrant
+        - python-yaml
+        - qemu
+        - vagrant
+        - virt-install
+      state: latest
+
+  - name: 'Add users to kvm groups'
+    user:
+      name: '{{ username }}'
+      groups: '{{ item }}'
+      append: 'yes'
+    with_items:
+      - 'kvm'
+      - 'libvirt'
+
+  - name: "Set unix_sock_group in libvirtd config"
+    lineinfile:
+      dest: /etc/libvirt/libvirtd.conf
+      regexp: "^#unix_sock_group =.*"
+      line: "unix_sock_group = \"libvirt\""
+
+  - name: "Set unix_sock_rw_perms in libvirtd config"
+    lineinfile:
+      dest: /etc/libvirt/libvirtd.conf
+      regexp: "^#unix_sock_rw_perms =.*"
+      line: "unix_sock_rw_perms = \"0770\""
+
+  - name: "Set user in qemu config"
+    lineinfile:
+      dest: /etc/libvirt/qemu.conf
+      regexp: "^#user =.*"
+      line: "user = \"{{ username }}\""
+
+  - name: 'Enable kvm systemd service'
+    ansible.builtin.systemd:
+      name: '{{ item }}'
+      state: 'started'
+      enabled: 'yes'
+    with_items:
+      - 'libvirtd'
+      - 'cockpit.socket'
+      - 'pmcd.service'
+      - 'pmlogger.service'
+      - 'podman.socket'
+
+  - name: 'Create KVM directories'
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: "{{ username }}"
+      group: "{{ gid }}"
+      recurse: yes
+    with_items:
+       -  "{{ vagrant_recipes }}"
+
+  - name: "Fetch Vagrant Plugin List for root"
+    command: vagrant plugin list
+    register: vagrant_plugin_list
+    changed_when: "'libvirt' not in vagrant_plugin_list.stdout"
+
+  - name: "Install vagrant-libvirt plugin for root"
+    ansible.builtin.shell:
+      cmd: vagrant plugin install vagrant-libvirt
+    when: '"libvirt" not in vagrant_plugin_list.stdout'
+
+  - name: "Install vagrant-mutate plugin for root"
+    ansible.builtin.shell:
+      cmd: vagrant plugin install vagrant-mutate
+    when: '"mutate" not in vagrant_plugin_list.stdout'
+
+  - name: 'Install KVM Python Packet for root'
+    pip:
+      name: "{{ item }}"
+    with_items:
+      - "lxml"
+
+  become: yes
+
+
+
+- block:
+  # user
+
+  - name: "Fetch Vagrant Plugin List for user"
+    command: vagrant plugin list
+    register: vagrant_plugin_list
+    changed_when: "'libvirt' not in vagrant_plugin_list.stdout"
+
+  - name: "Install vagrant-libvirt plugin for user"
+    ansible.builtin.shell:
+      cmd: vagrant plugin install vagrant-libvirt
+    when: '"libvirt" not in vagrant_plugin_list.stdout'
+
+  - name: "Install vagrant-mutate plugin for user"
+    ansible.builtin.shell:
+      cmd: vagrant plugin install vagrant-mutate
+    when: '"mutate" not in vagrant_plugin_list.stdout'
+
+  - name: 'Install KVM Python Packet for user'
+    pip:
+      name: "{{ item }}"
+    with_items:
+      - "lxml"

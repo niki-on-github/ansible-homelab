@@ -1,0 +1,20 @@
+---
+- name: "Create gitea directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/gitea"
+    - "{{ docker_data }}/gitea"
+
+- name: "Generate gitea docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/gitea/docker-compose.yml"
+
+- name: "Deploy gitea"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/gitea'
+    files:
+    - docker-compose.yml

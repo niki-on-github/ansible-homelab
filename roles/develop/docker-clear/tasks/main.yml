@@ -1,0 +1,35 @@
+---
+
+- block:
+  # root
+
+  - name: Get running containers
+    docker_host_info:
+      containers: yes
+    register: docker_info
+
+  - name: Stop running containers
+    docker_container:
+      name: "{{ item }}"
+      state: stopped
+    loop: "{{ docker_info.containers | map(attribute='Id') | list }}"
+
+  - name: Remove Stoped docker containers
+    shell: |
+       docker rm $(docker ps -a -q);
+    when: (docker_info.containers | length)  != 0
+
+  - name: Docker Prune
+    community.docker.docker_prune:
+      containers: yes
+      images: no
+      networks: yes
+      volumes: yes
+      builder_cache: yes
+
+  - name: Delete {{ docker_home }}
+    file:
+      state: absent
+      path: "{{docker_home}}"
+
+  become: yes

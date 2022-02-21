@@ -1,0 +1,9 @@
+timezone: 'Europe/Berlin'
+backup_home: "/mnt/backup"
+docker_home: '/opt/docker'
+docker_data: '{{docker_home}}/data'
+docker_recipes: '{{docker_home}}/recipes'
+docker_logs: '{{docker_home}}/log'
+docker_temp: '{{docker_home}}/temp'
+docker_backup: "{{ backup_home }}/docker"
+vagrant_recipes: '/opt/vagrant/recipes'

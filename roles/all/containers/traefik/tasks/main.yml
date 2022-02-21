@@ -1,0 +1,74 @@
+---
+- name: "Create traefik directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/traefik"
+    - "{{ docker_data }}/traefik"
+    - "{{ docker_data }}/traefik/config"
+    - "{{ docker_data }}/traefik/certs"
+    - "{{ docker_data }}/traefik/log"
+
+- name: "Generate traefik docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/traefik/docker-compose.yml"
+
+- name: "Generate traefik config"
+  template:
+    src: "{{ item }}"
+    dest: "{{ docker_data }}/traefik/config/{{ item | basename | regex_replace('\\.j2$', '') }}"
+  with_items:
+    - "config.yml.j2"
+    - "traefik.yml.j2"
+
+- name: "Generate CA private key"
+  community.crypto.openssl_privatekey:
+    path: "{{ docker_data }}/traefik/certs/ca.key"
+
+- name: "Generate an CA certificate signing request"
+  community.crypto.openssl_csr:
+    path: "{{ docker_data }}/traefik/certs/ca.csr"
+    privatekey_path: "{{ docker_data }}/traefik/certs/ca.key"
+    country_name: "DE"
+    organization_name: "Homelab CA"
+    email_address: "root@{{ domain }}"
+    common_name: "{{ domain }}"
+
+- name: "Generate a self signed CA certificate"
+  community.crypto.x509_certificate:
+    path: "{{ docker_data }}/traefik/certs/self-signed-ca-cert.crt"
+    privatekey_path: "{{ docker_data }}/traefik/certs/ca.key"
+    csr_path: "{{ docker_data }}/traefik/certs/ca.csr"
+    entrust_not_after: "+3650d"
+    provider: selfsigned
+
+- name: "Generate traefik private key"
+  community.crypto.openssl_privatekey:
+    path: "{{ docker_data }}/traefik/certs/traefik.key"
+
+- name: "Generate traefik certificate signing request"
+  community.crypto.openssl_csr:
+    path: "{{ docker_data }}/traefik/certs/traefik.csr"
+    privatekey_path: "{{ docker_data }}/traefik/certs/traefik.key"
+    country_name: "DE"
+    organization_name: "Homelab"
+    email_address: "root@{{ domain }}"
+    common_name: "{{ domain }}"
+
+- name: "Generate an traefik server certificate signed with your own CA certificate"
+  community.crypto.x509_certificate:
+    path: "{{ docker_data }}/traefik/certs/traefik.crt"
+    csr_path: "{{ docker_data }}/traefik/certs/traefik.csr"
+    ownca_path: "{{ docker_data }}/traefik/certs/self-signed-ca-cert.crt"
+    ownca_privatekey_path: "{{ docker_data }}/traefik/certs/ca.key"
+    provider: ownca
+    force: true
+
+- name: "Deploy traefik"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/traefik'
+    files:
+    - docker-compose.yml

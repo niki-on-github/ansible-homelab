@@ -1,0 +1,23 @@
+---
+- block:
+  # root
+
+  - name: 'Install Firewall packages'
+    package:
+      name:
+        - ufw
+        - ufw-extras
+      state: latest
+
+  # - name: "Install ufw-docker package from AUR"
+  #   kewlfft.aur.aur:
+  #     name:
+  #       - ufw-docker
+  #   become_user: aur_builder
+
+  # - name: 'Initialize ufw-docker'
+  #   shell: |
+  #     ufw-docker install
+  #   changed_when: false
+
+  become: yes

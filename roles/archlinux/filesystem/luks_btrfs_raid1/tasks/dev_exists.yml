@@ -1,0 +1,10 @@
+- block:
+  - name: "Get {{ item }} statistics"
+    stat:
+      path: '{{ item }}'
+    register: dev_info
+
+  - name: "Check if {{ item }} exists"
+    fail:
+      msg: '{{ item }} does not exists!'
+    when: "not dev_info.stat.exists"

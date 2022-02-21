@@ -1,0 +1,33 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  duplicati:
+    build: ./container
+    container_name: duplicati
+    restart: unless-stopped
+    environment:
+      TZ: "{{ timezone }}"
+      PUID: "0"
+      PGID: "0"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.duplicati.middlewares: "iframe-header@file"
+      traefik.http.routers.duplicati.tls: "true"
+      traefik.http.routers.duplicati.rule: "Host(`duplicati.{{ domain }}`)"
+      traefik.http.routers.duplicati.service: "duplicati"
+      traefik.http.services.duplicati.loadbalancer.server.port: "8200"
+    networks:
+      - default
+    volumes:
+      - "{{ docker_data }}/duplicati/config:/config:rw"
+      - "{{ docker_data }}/duplicati/scripts:/scripts:ro"
+      - "{{ docker_home }}:/source:ro"
+      - "{{ docker_backup }}:/backups:rw"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+

@@ -1,0 +1,198 @@
+---
+- block:
+  # root
+
+  - name: "Verify that required role variables are defined"
+    assert:
+      that:
+        - "{{ role_var }} is defined"
+        - "{{ role_var }} | length > 0"
+        - "{{ role_var }} != None"
+      fail_msg: "{{ role_var }} needs to be set!"
+      success_msg: "Required variable {{ role_var }} is defined"
+    loop_control:
+      loop_var: role_var
+    with_items:
+      - dev1
+      - dev2
+      - luks_passphrase
+      - mountpoint
+      - label
+
+  - name: "Verify that specified devices exist"
+    include_tasks: dev_exists.yml
+    with_items:
+      - "{{ dev1 }}"
+      - "{{ dev2 }}"
+
+  - name: 'Get keyfile statistik'
+    ansible.builtin.stat:
+      path: "{{ keyfile }}"
+    register: xkeyfile
+
+  - name: "Check Keyfile attributes and throw error"
+    ansible.builtin.fail:
+      msg: "No valid keyfile found at '{{ keyfile }}'"
+    when: not xkeyfile.stat.exists or xkeyfile.stat.pw_name != 'root' or xkeyfile.stat.mode != '0000'
+
+  - name: 'Install required packages'
+    package:
+      name:
+        - cryptsetup
+      state: latest
+
+  - name: "Install btrfs script to show volume status: /usr/bin/btrfs-status"
+    template:
+      src: "btrfs-status.j2"
+      dest: "/usr/bin/btrfs-status"
+      owner: "root"
+      group: "root"
+      mode: 0755
+
+  - name: "Create partition table on {{ dev1 }}"
+    community.general.parted:
+      device: "{{ dev1 }}"
+      label: gpt
+      number: 1
+      state: present
+      part_start: 1MiB
+      part_end: 100%
+
+  - name: "Create partition table on {{ dev2 }}"
+    community.general.parted:
+      device: "{{ dev2 }}"
+      label: gpt
+      number: 1
+      state: present
+      part_start: 1MiB
+      part_end: 100%
+
+  - name: "Create LUKS container {{ dev1_name }} for {{ dev1 }}1"
+    community.crypto.luks_device:
+      device: "{{ dev1 }}1"
+      state: "opened"
+      name: "{{ dev1_name }}"
+      keyfile: "{{ keyfile }}"
+      new_passphrase: "{{ luks_passphrase }}"
+
+  - name: "Create LUKS container {{ dev2_name }} for {{ dev2 }}1"
+    community.crypto.luks_device:
+      device: "{{ dev2 }}1"
+      state: "opened"
+      name: "{{ dev2_name }}"
+      keyfile: "{{ keyfile }}"
+      new_passphrase: "{{ luks_passphrase }}"
+
+  - name: "Create btrfs raid1 Filesystem"
+    community.general.filesystem:
+      fstype: btrfs
+      dev: "/dev/mapper/{{ dev1_name }}"
+      opts: "-L {{ label }} -m raid1 -d raid1 /dev/mapper/{{ dev2_name }}"
+
+  - name: "Get {{ dev1 }}1 UUID"
+    ansible.builtin.shell:
+      cmd: "blkid {{ dev1 }}1 -s UUID -o value"
+    register: dev1_uuid
+    changed_when: false
+
+  - name: "Create crypttab entire for {{ dev1 }}1"
+    community.general.crypttab:
+      name: "{{ dev1_name }}"
+      backing_device: "UUID={{ dev1_uuid.stdout_lines[0] }}"
+      state: present
+      password: "{{ keyfile }}"
+    no_log: true
+
+  - name: "Get {{ dev2 }}1 UUID"
+    ansible.builtin.shell:
+      cmd: "blkid {{ dev2 }}1 -s UUID -o value"
+    register: dev2_uuid
+    changed_when: false
+
+  - name: "Create crypttab entire for {{ dev2 }}1"
+    community.general.crypttab:
+      name: "{{ dev2_name }}"
+      backing_device: "UUID={{ dev2_uuid.stdout_lines[0] }}"
+      state: present
+      password: "{{ keyfile }}"
+    no_log: true
+
+  - name: "Create temporary mount point for btrfs root volume"
+    file:
+      path: '/tmp/tmp.mountpoint'
+      state: 'directory'
+      owner: '{{ uid }}'
+      group: '{{ gid }}'
+      mode: '0755'
+
+  - name: "Mount btrfs root volume"
+    mount:
+      path: "/tmp/tmp.mountpoint"
+      src: "LABEL={{ label }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }}'
+      state: "mounted"
+      fstab: /tmp/tmp.fstab
+    changed_when: false
+
+  - name: "Get btrfs submolume list"
+    command: "btrfs subvolume list /tmp/tmp.mountpoint"
+    register: subvolume_list
+    changed_when: false
+    failed_when: false
+    ignore_errors: true
+    no_log: true
+
+  - name: "Create subvolume {{ btrfs_subvol_name }} if not exists"
+    command: "btrfs subvolume create /tmp/tmp.mountpoint/{{ btrfs_subvol_name }}"
+    when: 'btrfs_subvol_name not in subvolume_list.stdout'
+
+  - name: "Unmount btrfs root volume"
+    mount:
+      path: "/tmp/tmp.mountpoint"
+      src: "LABEL={{ label }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }}'
+      state: "unmounted"
+      fstab: /tmp/tmp.fstab
+    changed_when: false
+
+  - name: "Create mount point for {{ btrfs_subvol_name }} subvolume"
+    file:
+      path: '{{ mountpoint }}'
+      state: 'directory'
+      owner: '{{ uid }}'
+      group: '{{ gid }}'
+      mode: '0755'
+
+  - name: "Add fstab entire for {{ btrfs_subvol_name }} subvolume"
+    mount:
+      boot: yes
+      path: "{{ mountpoint }}"
+      src: "LABEL={{ label }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }},subvol={{ btrfs_subvol_name }}'
+      state: "mounted"
+
+  - name: "Create luks header backup directory"
+    file:
+      path: '{{ mountpoint }}/.luks'
+      state: 'directory'
+      owner: '0'
+      group: '0'
+      mode: '0700'
+
+  # The header backup might change for example when new keys are added manually.
+  # Therefore we need to do the following steps each time the role is executed.
+  - name: "Create LUKS header backup for {{ dev1 }}1"
+    shell: |
+      cryptsetup luksHeaderBackup {{ dev1 }}1 --header-backup-file {{ mountpoint }}/.luks/{{ dev1_uuid.stdout_lines[0] }}
+      chmod 000 "{{ mountpoint }}/.luks/{{ dev1_uuid.stdout_lines[0] }}"
+
+  - name: "Create LUKS header backup for {{ dev2 }}1"
+    shell: |
+      cryptsetup luksHeaderBackup {{ dev2 }}1 --header-backup-file {{ mountpoint }}/.luks/{{ dev2_uuid.stdout_lines[0] }}
+      chmod 000 "{{ mountpoint }}/.luks/{{ dev2_uuid.stdout_lines[0] }}"
+
+
+  become: yes

@@ -1,0 +1,26 @@
+---
+- name: "Create jenkins directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/jenkins"
+    - "{{ docker_data }}/jenkins"
+    - "{{ docker_recipes }}/jenkins/container"
+
+- name: "Generate jenkins docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/jenkins/docker-compose.yml"
+
+- name: "Generate jenkins docker build file"
+  template:
+    src: Dockerfile.j2
+    dest: "{{ docker_recipes }}/jenkins/container/Dockerfile"
+
+- name: "Deploy jenkins"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/jenkins'
+    files:
+    - docker-compose.yml

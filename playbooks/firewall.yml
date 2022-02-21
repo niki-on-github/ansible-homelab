@@ -1,0 +1,7 @@
+---
+- hosts: archlinux
+  roles:
+
+    - role: archlinux/system
+    - role: archlinux/firewall
+

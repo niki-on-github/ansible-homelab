@@ -1,0 +1,74 @@
+---
+- block:
+  # root
+
+  - name: "Allow SSH"
+    community.general.ufw:
+      rule: limit
+      port: ssh
+      proto: tcp
+      src: '{{ item }}'
+    loop:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+
+  - name: "Allow DHCP"
+    community.general.ufw:
+      rule: allow
+      port: bootps
+
+  - name: "Allow DNS"
+    community.general.ufw:
+      rule: allow
+      port: 53
+      proto: '{{ item }}'
+    loop:
+      - udp
+      - tcp
+
+  - name: "Allow HTTP"
+    community.general.ufw:
+      rule: allow
+      port: http
+      proto: tcp
+      src: '{{ item }}'
+    loop:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+
+  - name: "Allow HTTPS"
+    community.general.ufw:
+      rule: allow
+      port: https
+      proto: tcp
+      src: '{{ item }}'
+    loop:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+
+  - name: "Allow Samba"
+    community.general.ufw:
+      rule: allow
+      port: CIFS
+      src: '{{ item }}'
+    loop:
+      - 10.0.0.0/8
+      - 172.16.0.0/12
+      - 192.168.0.0/16
+
+  - name: "Set Firewall default policy to deny"
+    community.general.ufw:
+      state: enabled
+      policy: deny
+
+  - name: 'Enable ufw systemd service with new config'
+    ansible.builtin.systemd:
+      name: 'ufw'
+      state: 'restarted'
+      enabled: 'yes'
+    changed_when: false
+
+  become: yes

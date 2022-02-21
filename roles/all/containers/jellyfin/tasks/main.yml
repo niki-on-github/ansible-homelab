@@ -1,0 +1,23 @@
+---
+- name: "Create jellyfin directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/jellyfin"
+    - "{{ docker_data }}/jellyfin"
+    - "{{ docker_temp }}/jellyfin"
+    - "{{ docker_temp }}/jellyfin/cache"
+    - "{{ docker_temp }}/jellyfin/media"
+
+- name: "Generate jellyfin docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/jellyfin/docker-compose.yml"
+
+- name: "Deploy jellyfin"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/jellyfin'
+    files:
+    - docker-compose.yml

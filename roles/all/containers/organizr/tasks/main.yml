@@ -1,0 +1,20 @@
+---
+- name: "Create organizr directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/organizr"
+    - "{{ docker_data }}/organizr"
+
+- name: "Generate organizr docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/organizr/docker-compose.yml"
+
+- name: "Deploy organizr"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/organizr'
+    files:
+    - docker-compose.yml

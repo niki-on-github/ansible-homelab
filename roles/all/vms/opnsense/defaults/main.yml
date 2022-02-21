@@ -1,0 +1,10 @@
+---
+opnsense_bootstrap_vagrant_box: "generic/freebsd13"
+opnsense_release: "22.1"
+opnsense_wan_interface: "igb0"
+opnsense_lan_interface: "vtnet0"
+opnsense_dhcp_server_enabled: false
+opnsense_dhcp_range_start: "{{ '.'.join(gateway_ip.split('.')[:-1]) }}.100"
+opnsense_dhcp_range_end: "{{ '.'.join(gateway_ip.split('.')[:-1]) }}.200"
+opnsense_ip: "{{ gateway_ip }}"
+opnsense_subnet: "{{ subnet }}"

@@ -1,0 +1,20 @@
+---
+- name: "Create syncthing directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/syncthing"
+    - "{{ docker_temp }}/syncthing"
+
+- name: "Generate syncthing docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/syncthing/docker-compose.yml"
+
+- name: "Deploy syncthing"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/syncthing'
+    files:
+    - docker-compose.yml

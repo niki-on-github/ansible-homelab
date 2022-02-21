@@ -1,0 +1,31 @@
+---
+- name: "Create homeassistant directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/homeassistant"
+    - "{{ docker_data }}/homeassistant"
+
+- name: "Generate homeassistant docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/homeassistant/docker-compose.yml"
+
+- name: "Copy configuration"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ docker_data }}/homeassistant"
+    owner: "{{ uid }}"
+    group: "{{ gid }}"
+    mode: 0755
+    force: off
+  with_fileglob:
+    - files/*.yaml
+
+- name: "Deploy homeassistant"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/homeassistant'
+    files:
+    - docker-compose.yml

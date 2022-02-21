@@ -1,0 +1,26 @@
+---
+- name: "Create webdav directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/webdav"
+    - "{{ docker_data }}/webdav"
+
+- name: "Generate webdav docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/webdav/docker-compose.yml"
+
+- name: "Generate webdav docker-compose environment variables file"
+  template:
+    src: env.j2
+    dest: "{{ docker_recipes }}/webdav/.env"
+    force: no
+
+- name: "Deploy webdav"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/webdav'
+    files:
+    - docker-compose.yml

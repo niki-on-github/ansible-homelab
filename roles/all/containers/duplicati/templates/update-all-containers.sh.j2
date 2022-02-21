@@ -1,0 +1,19 @@
+#!/bin/bash
+
+DOCKER_COMPOSE_RECIPIES="{{ docker_recipes }}"
+DOCKER_COMPOSE_LOGS="{{ docker_logs }}"
+
+IFS=$'\n'
+for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" | xargs -I {} dirname "{}") ; do
+    cd "$recipe_path"
+    service_name=$(basename "$recipe_path")
+    log_name="$(date +"%Y-%m-%d_%H-%M-%S")-update.log"
+    docker-compose pull 2>&1
+    docker-compose build --no-cache --pull 2>&1
+    docker-compose up -d --remove-orphans 2>&1
+    mkdir -p $DOCKER_COMPOSE_LOGS/$service_name
+    docker inspect $(docker-compose images -q) 2>&1 > $DOCKER_COMPOSE_LOGS/$service_name/$log_name
+done
+
+unset IFS
+exit 0

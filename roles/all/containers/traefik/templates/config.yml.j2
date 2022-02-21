@@ -1,0 +1,84 @@
+http:
+  routers:
+
+    adguard:
+      rule: "Host(`adguard.{{ domain }}`)"
+      service: "adguard"
+      tls: {}
+      middlewares:
+        - iframe-header
+
+    cockpit:
+      rule: "Host(`cockpit.{{ domain }}`)"
+      service: "cockpit"
+      tls: {}
+      middlewares:
+        - iframe-header
+
+    opnsense:
+      # Required Settings in OPNsense:
+      # - "System : Settings : Administation :  Disable DNS Rebinding Checks = Enabled"
+      # - "System : Settings : Administation :  Alternate Hostnames = 'opnsense.{{ domain }}'"
+      rule: "Host(`opnsense.{{ domain }}`)"
+      service: "opnsense"
+      tls: {}
+      middlewares:
+        - iframe-header
+
+    traefik:
+      rule: "Host(`traefik.{{ domain }}`)"
+      service: "api@internal"
+      tls: {}
+      middlewares:
+        - iframe-header
+
+
+  middlewares:
+
+    auth:
+      forwardAuth:
+        address: "http://authelia:9091/api/verify?rd=https://auth.{{ domain }}"
+        trustForwardHeader: true
+        authResponseHeaders: "X-Forwarded-User"
+
+    https-redirect:
+      redirectScheme:
+        scheme: https
+
+    iframe-header:
+      headers:
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentSecurityPolicy: "frame-ancestors 'self' {{domain}} *.{{domain}} ;"
+
+
+  services:
+
+    adguard:
+      loadBalancer:
+        servers:
+          - url: "http://{{ gateway_ip }}:8080"
+        passHostHeader: true
+
+    cockpit:
+      loadBalancer:
+        servers:
+          - url: "https://{{ server_ip }}:9090"
+        serversTransport: ignore-self-signed
+
+    opnsense:
+      loadBalancer:
+        servers:
+          - url: "https://{{ gateway_ip }}"
+        serversTransport: ignore-self-signed
+
+
+  serversTransports:
+
+    ignore-self-signed:
+      insecureskipverify: true
+
+
+tls:
+  certificates:
+    - certFile: "/etc/certs/traefik.crt"
+      keyFile: "/etc/certs/traefik.key"

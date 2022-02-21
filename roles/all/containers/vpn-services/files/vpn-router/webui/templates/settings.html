@@ -1,0 +1,45 @@
+{% extends "bootstrap/base.html" %}
+{% import "bootstrap/wtf.html" as wtf %}
+{% block content %}
+<!-- use autocomplete="off" to reset all values in the form when reloading the page -->
+<div class="container">
+  <h3>OpenVPN Docker Settings</h3>
+  <hr>
+  <form action="" method="post" class="form" role="form" autocomplete="off">
+    {{ form.csrf_token() }}
+
+    <div class="form-group">
+      {{ wtf.form_field(form.RECONNECT_ENABLED, class='form-control') }}
+    </div>
+
+    <div class="form-group">
+      {{ wtf.form_field(form.UPDATE_INTERVAL_SEC, class='form-control', placeholder='Update Interval') }}
+    </div>
+
+    <div class="row">
+      <div class="form-group col-md-6">
+        {{ wtf.form_field(form.LOWER_THRESHOLD, class='form-control', placeholder='Lower Threshold') }}
+      </div>
+      <div class="form-group col-md-6">
+        {{ wtf.form_field(form.UPPER_THRESHOLD, class='form-control', placeholder='Upper Threshold') }}
+      </div>
+    </div>
+
+    <div class="row">
+      <div class="form-group col-md-6">
+        {{ wtf.form_field(form.EXCLUDE_START_H, class='form-control', placeholder='Begin exclude time slot (hour)') }}
+      </div>
+      <div class="form-group col-md-6">
+        {{ wtf.form_field(form.EXCLUDE_END_H, class='form-control', placeholder='End exclude time slot (hour)') }}
+      </div>
+    </div>
+
+    <div class="form-group">
+      {{ wtf.form_field(form.RECONNECT_THRESHOLD_SEC, class='form-control', placeholder='Reconnect Threshold') }}
+    </div>
+
+    <button type="submit" class="btn btn-primary">Save</button>
+  </form>
+  <hr>
+</div>
+{% endblock %}

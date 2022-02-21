@@ -1,0 +1,38 @@
+#!/bin/bash
+# Description: Script to performe a S.M.A.R.T. check
+
+LBLUE='\033[1;34m'
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+NC='\033[0m' #No Color
+
+if [ "$EUID" -ne 0 ]; then
+   echo -e "Please run as root"
+   exit 1
+fi
+
+lsblk | grep disk | awk '{print $1}' | while read -r line ; do
+   echo -e "${LBLUE}[INFO]${NC} Start S.M.A.R.T Test on /dev/$line"
+   smartctl --smart=on /dev/$line >/dev/null 2>&1
+   smartctl -t short /dev/$line >/dev/null 2>&1
+done
+
+
+echo -e "${LBLUE}[INFO]${NC} Wait 150 seconds to complete the S.M.A.R.T Tests..."
+sleep 50
+echo -e "${LBLUE}[INFO]${NC} 100 seconds remaining to complete the S.M.A.R.T Tests..."
+sleep 50
+echo -e "${LBLUE}[INFO]${NC} 50 seconds remaining to complete the S.M.A.R.T Tests..."
+sleep 50
+
+lsblk | grep disk | awk '{print $1}' | while read -r line ; do
+    echo -e "${LBLUE}[INFO]${NC} S.M.A.R.T Test-Result for /dev/$line"
+    if grep "^nvme" <<< $line >/dev/null ; then
+        smartctl -a /dev/$line | grep -E "(Critical Warning|Integrity Errors)"
+    else
+        smartctl -l selftest /dev/$line | sed 's/^.*local build)//' | sed 's/^.*www.smartmontools.org//' | sed 's/^.*===//' | sed '/^[[:space:]]*$/d' | tail -n +2 | head -n 2
+    fi
+    hddtemp /dev/$line 2>/dev/null
+done
+
+echo -e "${LBLUE}[INFO]${NC} S.M.A.R.T. tests completed"

@@ -1,0 +1,37 @@
+---
+- name: "Create monitoring-services directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+  with_items:
+    - "{{ docker_recipes }}/monitoring-services"
+    - "{{ docker_data }}/monitoring-services"
+    - "{{ docker_data }}/monitoring-services/influxdb"
+    - "{{ docker_data }}/monitoring-services/elasticsearch"
+    - "{{ docker_data }}/monitoring-services/kibana"
+    - "{{ docker_data }}/monitoring-services/logstash"
+
+- name: "Create grafana directories with user id 472 and groop id 0"
+  file:
+    path: "{{ docker_data }}/monitoring-services/grafana"
+    owner: "472"
+    group: "0"
+    state: directory
+  become: yes
+
+- name: "Generate logstash Dockerfile"
+  copy:
+    src: "files/logstash"
+    dest: "{{ docker_recipes }}/monitoring-services"
+
+- name: "Generate monitoring-services docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/monitoring-services/docker-compose.yml"
+
+- name: "Deploy monitoring-services"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/monitoring-services'
+    files:
+    - docker-compose.yml

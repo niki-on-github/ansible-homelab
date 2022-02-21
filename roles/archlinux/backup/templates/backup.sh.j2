@@ -1,0 +1,4 @@
+#!/bin/bash
+
+rsync -av --delete {{ docker_data }} {{ docker_backup }} --log-file=/var/log/backup.log
+echo "done"
