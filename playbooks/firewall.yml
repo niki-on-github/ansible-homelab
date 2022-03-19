@@ -3,5 +3,6 @@
   roles:
 
     - role: archlinux/system
-    - role: archlinux/firewall
+    # TODO: this block a lot of our trafic
+    # - role: archlinux/firewall
 

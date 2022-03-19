@@ -13,6 +13,7 @@
     src: "{{ item }}"
     dest: "{{ docker_data }}/authelia/{{ item | basename | regex_replace('\\.j2$', '') }}"
     # force: off
+  become: yes
   with_items:
     - "configuration.yml.j2"
     - "users_database.yml.j2"

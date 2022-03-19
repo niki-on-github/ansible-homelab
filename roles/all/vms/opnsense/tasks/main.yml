@@ -83,7 +83,7 @@
   become: yes
 
 - name: "Reload OPNsense configuration"
-  ansible.builtin.shell:
+  shell:
     cmd: virsh define /etc/libvirt/qemu/opnsense_default.xml
     chdir: "{{ vagrant_recipes }}/opnsense"
   become: yes
@@ -94,7 +94,7 @@
     state: running
 
 - name: "Download vagrant SSH private key for OPNsense"
-  ansible.builtin.fetch:
+  fetch:
     src: "{{ vagrant_recipes }}/opnsense/.vagrant/machines/default/libvirt/private_key"
     dest: "{{ role_path }}/../../../../files/opnsense/private_key"
     flat: yes

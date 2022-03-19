@@ -34,7 +34,7 @@
     group: "docker"
     mode: 0755
   with_fileglob:
-    - "{{ role_path }}/../../../../files/vpn-config/*.ovpn"
+    - "{{ role_path }}/../../../../files/vpn-config/services/*.ovpn"
 
 - name: "Copy vpn-router build recipes"
   copy:

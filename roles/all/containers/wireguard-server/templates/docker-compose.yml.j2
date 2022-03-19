@@ -1,0 +1,39 @@
+version: '3.8'
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  wireguard:
+    image: linuxserver/wireguard
+    container_name: wireguard
+    restart: unless-stopped
+    environment:
+      PUID: "{{ uid }}"
+      PGID: "{{ gid }}"
+      TZ: "{{ timezone }}"
+      SERVERURL: "wireguard.{{ domain }}"
+      SERVERPORT: 51820
+      PEERS: 5
+      INTERNAL_SUBNET: 10.13.13.0
+    ports:
+      - 51820:51820/udp
+    volumes:
+      - "{{ docker_data }}/wireguard-server:/config"
+      - "/lib/modules:/lib/modules:ro"
+      - "/usr/src:/usr/src:ro"
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    networks:
+      - default
+    sysctls:
+      - net.ipv4.conf.all.src_valid_mark=1
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.udp.routers.wireguard.rule: "Host(`wireguard.{{ domain }}`)"
+      traefik.udp.routers.wireguard.service: "wireguard"
+      traefik.udp.services.wireguard.loadbalancer.server.port: "51820"

@@ -1,3 +1,4 @@
+
 http:
   routers:
 
@@ -80,5 +81,13 @@ http:
 
 tls:
   certificates:
-    - certFile: "/etc/certs/traefik.crt"
-      keyFile: "/etc/certs/traefik.key"
+    certFile: "/certs/_wildcard.{{ domain }}.pem"
+    keyFile: "/certs/_wildcard.{{ domain }}-key.pem"
+    stores:
+        - "default"
+  stores:
+    default:
+        defaultCertificate:
+            certFile: "/certs/_wildcard.{{ domain }}.pem"
+            keyFile: "/certs/_wildcard.{{ domain }}-key.pem"
+

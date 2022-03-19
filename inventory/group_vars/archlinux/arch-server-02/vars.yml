@@ -1,6 +1,6 @@
 kvm_ethernet_bridge_interface: "eno3"
 kvm_bridge_name: "br1"
-domain: 'home.local'
+domain: 'server01.home'
 network_ip: "10.0.1.0"
 gateway_ip: "10.0.1.1"
 server_ip: "10.0.1.10"

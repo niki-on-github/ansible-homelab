@@ -1,0 +1,7 @@
+---
+- hosts: archlinux
+  roles:
+
+    # develop
+    - role: all/containers/traefik
+

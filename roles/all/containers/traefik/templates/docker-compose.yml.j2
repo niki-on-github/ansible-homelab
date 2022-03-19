@@ -22,8 +22,8 @@ services:
       - "443:443"
       - "8080:8080"
     volumes:
-      - "{{ docker_data }}/traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "{{ docker_data }}/traefik/certs:/certs"
       - "{{ docker_data }}/traefik/config/config.yml:/etc/traefik/config.yml:ro"
+      - "{{ docker_data }}/traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro"
       - "{{ docker_data }}/traefik/log:/log:rw"
-      - "{{ docker_data }}/traefik/certs:/etc/certs"
       - "/var/run/docker.sock:/var/run/docker.sock:ro"

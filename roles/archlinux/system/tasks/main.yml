@@ -1,6 +1,7 @@
 ---
 - block:
 
+  # TODO: we should reboot if we update the kernel
   - name: 'System update'
     pacman:
       update_cache: yes
@@ -11,6 +12,7 @@
       name:
         - htop
         - jq
+        - kexec-tools
         - neovim
         - openssl
         - python-pip

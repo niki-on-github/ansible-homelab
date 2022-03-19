@@ -32,10 +32,19 @@
   community.crypto.openssl_csr:
     path: "{{ docker_data }}/traefik/certs/ca.csr"
     privatekey_path: "{{ docker_data }}/traefik/certs/ca.key"
+    # constraints and usage required by CA
+    basic_constraints_critical: true
+    basic_constraints:
+      - CA:TRUE
+      - pathlen:0
+    key_usage:
+      - digitalSignature
+      - cRLSign
+      - keyCertSign
     country_name: "DE"
     organization_name: "Homelab CA"
     email_address: "root@{{ domain }}"
-    common_name: "{{ domain }}"
+    common_name: "ca.{{ domain }}"
 
 - name: "Generate a self signed CA certificate"
   community.crypto.x509_certificate:
@@ -45,23 +54,34 @@
     entrust_not_after: "+3650d"
     provider: selfsigned
 
+- name: "Show CA cert"
+  community.crypto.x509_certificate_info:
+    path: "{{ docker_data }}/traefik/certs/self-signed-ca-cert.crt"
+  register: ca_cert_result
+- debug:
+    msg: >
+      subject: {{ca_cert_result.subject}}
+      issuer: {{ca_cert_result.issuer}}
+      subject_alt_name: {{ca_cert_result.subject_alt_name}}
+
 - name: "Generate traefik private key"
   community.crypto.openssl_privatekey:
-    path: "{{ docker_data }}/traefik/certs/traefik.key"
+    path: "{{ docker_data }}/traefik/certs/_wildcard.{{ domain }}-key.pem"
 
 - name: "Generate traefik certificate signing request"
   community.crypto.openssl_csr:
-    path: "{{ docker_data }}/traefik/certs/traefik.csr"
-    privatekey_path: "{{ docker_data }}/traefik/certs/traefik.key"
+    path: "{{ docker_data }}/traefik/certs/_wildcard.{{ domain }}.csr"
+    privatekey_path: "{{ docker_data }}/traefik/certs/_wildcard.{{ domain }}-key.pem"
     country_name: "DE"
     organization_name: "Homelab"
     email_address: "root@{{ domain }}"
     common_name: "{{ domain }}"
+    subject_alt_name: 'DNS:*.{{ domain }}'
 
 - name: "Generate an traefik server certificate signed with your own CA certificate"
   community.crypto.x509_certificate:
-    path: "{{ docker_data }}/traefik/certs/traefik.crt"
-    csr_path: "{{ docker_data }}/traefik/certs/traefik.csr"
+    path: "{{ docker_data }}/traefik/certs/_wildcard.{{ domain }}.pem"
+    csr_path: "{{ docker_data }}/traefik/certs/_wildcard.{{ domain }}.csr"
     ownca_path: "{{ docker_data }}/traefik/certs/self-signed-ca-cert.crt"
     ownca_privatekey_path: "{{ docker_data }}/traefik/certs/ca.key"
     provider: ownca
@@ -72,3 +92,18 @@
     project_src: '{{ docker_recipes }}/traefik'
     files:
     - docker-compose.yml
+
+- name: "Create CA folder on ansible host"
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  delegate_to: localhost
+  with_items:
+    - "{{ role_path }}/../../../../files/CA"
+
+- name: "Download self signed CA certificate to ansible host"
+  fetch:
+    src: "{{ docker_data }}/traefik/certs/self-signed-ca-cert.crt"
+    dest: "{{ role_path }}/../../../../files/CA/rootCA.pem"
+    flat: yes
