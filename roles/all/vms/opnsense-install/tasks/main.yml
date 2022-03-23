@@ -34,6 +34,7 @@
   docker_container_info:
     name: "pxe-server"
   register: pxe_server_info
+  become: yes
 
 - name: "Stop pxe server if running (conflicting port)"
   docker_container:
@@ -42,8 +43,24 @@
   register: pxe_server
   when: pxe_server_info.exists
 
+# NOTE: This should fix our internet connection
+- name: "Remove default route to our network bridge if OPNsense is not provisioned"
+  shell:
+    cmd: "ip route del default via {{ gateway_ip }} dev {{ kvm_bridge_name }} >/dev/null 2>&1"
+  become: yes
+  ignore_errors: True
+  when: "not provisioning_check.stat.exists"
+
+# NOTE: This is not required since we add the instruction to the Vagrantfile.
+# For easier analysis of connection problems, however, we'll leave it here.
+- name: "Install required ansible plugins"
+  shell:
+    cmd: ansible-galaxy install -r requirements.yml
+    chdir: "{{ vagrant_recipes }}/opnsense/ansible"
+  become: yes
+
 - name: "Deploy OPNsense (this can take some time)"
-  ansible.builtin.shell:
+  shell:
     cmd: vagrant up
     chdir: "{{ vagrant_recipes }}/opnsense"
   register: opnsense_deploy
@@ -106,3 +123,4 @@
     state: started
   register: pxe_server
   when: pxe_server_info.exists and pxe_server.changed
+  become: yes

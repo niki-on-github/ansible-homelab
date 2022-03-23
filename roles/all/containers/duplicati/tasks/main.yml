@@ -11,6 +11,18 @@
     - "{{ docker_data }}/duplicati/scripts"
     - "{{ docker_data }}/duplicati/config"
 
+- name: "Create duplicati directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    recurse: yes
+    owner: "{{ username }}"
+    group: "docker"
+    mode: 0755
+  with_items:
+    - "{{ duplicati_backup }}"
+  become: yes
+
 - name: "Generate duplicati scripts"
   template:
     src: "{{ item }}"

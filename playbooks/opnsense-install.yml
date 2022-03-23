@@ -9,4 +9,4 @@
     - role: archlinux/network/kvm-bridge
 
     # VMs
-    - role: all/vms/opnsense
+    - role: all/vms/opnsense-install

@@ -1,1 +1,2 @@
-traefik_log_level: "DEBUG"
+traefik_log_level: "INFO"
+ca_passphrase: "{{ webservices_password }}"

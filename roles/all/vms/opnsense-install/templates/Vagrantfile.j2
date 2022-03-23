@@ -26,6 +26,7 @@ Vagrant.configure(2) do |config|
     libvirt.machine_virtual_size = 32
     libvirt.graphics_type = "vnc"
     libvirt.video_type = "virtio"
+    libvirt.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
     {{ opnsense_usb_dev | default('')  }}
     {{ opnsense_pci_dev | default('') | indent(width=4, first=False) }}
   end
@@ -44,7 +45,7 @@ Vagrant.configure(2) do |config|
   # Configure OPNsense
   config.vm.provision :ansible do |ansible|
     ansible.verbose = "v"
-    ansible.galaxy_role_file = 'ansible/requirements.yml'
+    # ansible.galaxy_role_file = 'ansible/requirements.yml' # install before vagant up to reduce problems
     ansible.playbook = "ansible/playbook.yml"
   end
 

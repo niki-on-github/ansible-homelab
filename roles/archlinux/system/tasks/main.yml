@@ -2,11 +2,13 @@
 - block:
 
   # TODO: we should reboot if we update the kernel
+  # TODO: update often cause problems e.g. VM deployment. But we need lates packages to be able to install other requirred packages with other rules.
   - name: 'System update'
     pacman:
       update_cache: yes
       upgrade: yes
 
+  # NOTE: kexec not work with hardened kernel
   - name: 'Install base packages'
     package:
       name:
@@ -15,6 +17,7 @@
         - kexec-tools
         - neovim
         - openssl
+        - parted
         - python-pip
         - usbutils
       state: latest

@@ -8,5 +8,8 @@
     # system
     - role: archlinux/system
     - role: archlinux/docker
+
+    # first install traefik
+    - role: all/containers/traefik
     - role: all/containers/all
 

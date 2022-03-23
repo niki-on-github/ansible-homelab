@@ -41,7 +41,7 @@
       path: "{{ docker_backup }}"
     register: docker_backup_dir
 
-  - name: 'Create docker directories'
+  - name: 'Create docker home directory'
     file:
       dest: "{{ item }}"
       state: directory
@@ -50,10 +50,6 @@
       recurse: yes
     with_items:
        -  "{{ docker_home }}"
-       -  "{{ docker_recipes }}"
-       -  "{{ docker_data }}"
-       -  "{{ docker_logs }}"
-       -  "{{ docker_temp }}"
 
   # We use this network as default network bridge since the default bridge created by docker has limitations!
   - name: 'Create default docker-bridge network'
@@ -67,12 +63,25 @@
 
   - name: "Restore {{ docker_home }} from {{ docker_backup }}"
     synchronize:
-      src: "{{ docker_backup }}"
-      dest: "{{ docker_home }}/"
+      src: "{{ docker_backup }}/"
+      dest: "{{ docker_home }}"
       delete: true
       recursive: yes
     delegate_to: "{{ inventory_hostname }}"
-    when: not docker_data_before.stat.exists and docker_backup_dir.stat.exists
+    when: not docker_data_before.stat.exists and not develop and docker_backup_dir.stat.exists
+
+  - name: 'Create docker directories'
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: "{{ username }}"
+      group: "docker"
+      recurse: yes
+    with_items:
+       -  "{{ docker_recipes }}"
+       -  "{{ docker_data }}"
+       -  "{{ docker_logs }}"
+       -  "{{ docker_temp }}"
 
   become: yes
 

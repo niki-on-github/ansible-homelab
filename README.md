@@ -32,8 +32,10 @@ ansible-vault edit ./inventory/group_vars/$GROUP_NAME/$HOSTNAME/secret.yml
 
 ## Deploy
 
-Adjust the `domain` variable and create an entry in your DNS server for the new server.
-
 ```bash
-ansible-playbook -i ./inventory/testserver01 ./playbooks/docker.yml -K --ask-vault-password
+ansible-playbook -i ./inventory/testserver_01 ./playbooks/filesystem.yml -K --ask-vault-password
+ansible-playbook -i ./inventory/testserver_01 ./playbooks/opnsense-install.yml -K --ask-vault-password
+ansible-playbook -i ./inventory/testserver_01 ./playbooks/docker.yml -K --ask-vault-password
+ansible-playbook -i ./inventory/testserver_01 ./playbooks/backup.yml -K --ask-vault-password
+ansible-playbook -i ./inventory/opnsense_01 ./playbooks/opnsense-configure.yml
 ```

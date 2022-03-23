@@ -44,6 +44,16 @@
         with_items:
         - "ipaddrv6"
 
+      - name: "Enable blocking on WAN"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/interfaces/wan/{{ '{{' }} item {{ '}}' }}"
+          value: "on"
+          pretty_print: yes
+        with_items:
+        - "blockpriv"
+        - "blockbogons"
+
       - name: "Remove IPv6 configuration from LAN"
         community.general.xml:
           path: "/usr/local/etc/config.xml"
@@ -108,6 +118,30 @@
           add_children:
           - member: "1001"
 
+      - name: "Set Domain"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/system/domain"
+          value: "{{ domain }}"
+          pretty_print: yes
+
+      - name: "Add domainoverrides tag to unbound"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/unbound/domainoverrides"
+          value: ""
+          pretty_print: yes
+
+      - name: "Add Domain Override for {{ domain }} to unbound"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/unbound/domainoverrides"
+          pretty_print: yes
+          add_children:
+          - domain: "{{ domain }}"
+          - ip: "{{ server_ip }}"
+          - descr: "Homelab Domain"
+
       - name: "Enable SSH"
         community.general.xml:
           path: "/usr/local/etc/config.xml"
@@ -116,9 +150,23 @@
           add_children:
           - enabled: "enabled"
 
-      - name: "Add community repository"
-        ansible.builtin.shell:
-          cmd: fetch -o /usr/local/etc/pkg/repos/mimugmail.conf https://www.routerperformance.net/mimugmail.conf
+      - name: "Set General DNS Server to Unbound"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/system/dnsserver"
+          value: "{{ gateway_ip }}"
+          pretty_print: yes
+
+      - name: "Set LAN DNS Server to Unbound"
+        community.general.xml:
+          path: "/usr/local/etc/config.xml"
+          xpath: "/opnsense/dhcpd/lan/dnsserver"
+          value: "{{ gateway_ip }}"
+          pretty_print: yes
+
+#      - name: "Add community repository"
+#        ansible.builtin.shell:
+#          cmd: fetch -o /usr/local/etc/pkg/repos/mimugmail.conf https://www.routerperformance.net/mimugmail.conf
 
       - name: "Write all changes to storage"
         ansible.builtin.shell:

@@ -28,6 +28,6 @@ services:
       - "{{ docker_data }}/duplicati/config:/config:rw"
       - "{{ docker_data }}/duplicati/scripts:/scripts:ro"
       - "{{ docker_home }}:/source:ro"
-      - "{{ docker_backup }}:/backups:rw"
+      - "{{ duplicati_backup }}:/backups:rw"
       - "/var/run/docker.sock:/var/run/docker.sock"
 

@@ -2,5 +2,6 @@
 - hosts: archlinux
   roles:
 
+    - role: archlinux/system
     - role: archlinux/filesystem/luks_btrfs_raid1
     - role: archlinux/disk-monitoring

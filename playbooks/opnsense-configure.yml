@@ -1,0 +1,5 @@
+---
+- hosts: opnsense
+  roles:
+
+    - role: opnsense/configure

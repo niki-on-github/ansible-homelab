@@ -11,3 +11,10 @@ Usage:
 ```bash
 ssh vagrant@$ROUTER_IP -i "files/opnsense/private_key"
 ```
+
+## Post Setup
+
+Recommend Plugins:
+
+- `os-qemu-guest-agent`
+- `os-wireguard`

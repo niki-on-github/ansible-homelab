@@ -39,6 +39,7 @@
     package:
       name:
         - cryptsetup
+        - parted
       state: latest
 
   - name: "Install btrfs script to show volume status: /usr/bin/btrfs-status"
