@@ -3,7 +3,6 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/watchtower"
 

@@ -62,7 +62,7 @@ services:
       - .env
     volumes:
       - "{{ docker_data }}/vpn-services/jdownloader:/config"
-      - "{{ docker_temp }}/vpn-services/jdownloader:/output"
+      - "{{ docker_share }}/samba/vpn-services/jdownloader:/output"
 
   vpn_nzbget:
     image: ghcr.io/linuxserver/nzbget
@@ -77,4 +77,4 @@ services:
     volumes:
       - "{{ docker_data }}/vpn-services/nzbget/config:/config"
       - "{{ docker_data }}/vpn-services/nzbget/scripts:/scripts"
-      - "{{ docker_temp }}/vpn-services/nzbget:/downloads"
+      - "{{ docker_share }}/samba/vpn-services/nzbget:/downloads"

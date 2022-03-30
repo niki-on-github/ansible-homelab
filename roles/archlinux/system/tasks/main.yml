@@ -12,6 +12,7 @@
   - name: 'Install base packages'
     package:
       name:
+        - borg
         - htop
         - jq
         - kexec-tools

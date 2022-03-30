@@ -1,19 +1,23 @@
 version: '3.7'
 
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
 services:
   server:
     image: crazymax/samba
     container_name: samba
     restart: unless-stopped
-    network_mode: 'host'
+    ports:
+      - 445:445
+    networks:
+      - default
     environment:
       TZ: "{{ timezone }}"
-      SAMBA_SERVER_STRING: "{{ domain }} samba server"
     labels:
       com.centurylinklabs.watchtower.enable: "true"
     volumes:
       - "{{ docker_data }}/samba:/data"
-      - "{{ docker_temp }}/samba/music:/samba/music"
-      - "{{ docker_temp }}/samba/movies:/samba/movies"
-      - "{{ docker_temp }}/samba/series:/samba/series"
-      - "{{ docker_temp }}/samba/pictures:/samba/pictures"
+      - "{{ docker_share }}/samba:/samba"

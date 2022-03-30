@@ -16,23 +16,6 @@
       cmd: "/usr/local/opnsense/scripts/firmware/install.sh {{ item }}"
     with_items: "{{ opn_plugins | default([]) }}"
 
-  # - name: "Add domainoverrides tag to unbound"
-  #   community.general.xml:
-  #     path: "/conf/config.xml"
-  #     xpath: "/opnsense/unbound/domainoverrides"
-  #     value: ""
-  #     pretty_print: yes
-
-  # - name: "Add Domain Override for {{ domain }} to unbound"
-  #   community.general.xml:
-  #     path: "/conf/config.xml"
-  #     xpath: "/opnsense/unbound/domainoverrides"
-  #     pretty_print: yes
-  #     add_children:
-  #     - domain: "{{ domain }}"
-  #     - ip: "{{ server_ip }}"
-  #     - descr: "Homelab Domain"
-
   - name: "Reload services and webgui"
     command: "{{ item }}"
     with_items:

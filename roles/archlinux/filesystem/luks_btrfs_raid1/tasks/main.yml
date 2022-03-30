@@ -96,7 +96,7 @@
     register: dev1_uuid
     changed_when: false
 
-  - name: "Create crypttab entire for {{ dev1 }}1"
+  - name: "Create crypttab entry for {{ dev1 }}1"
     community.general.crypttab:
       name: "{{ dev1_name }}"
       backing_device: "UUID={{ dev1_uuid.stdout_lines[0] }}"
@@ -110,7 +110,7 @@
     register: dev2_uuid
     changed_when: false
 
-  - name: "Create crypttab entire for {{ dev2 }}1"
+  - name: "Create crypttab entry for {{ dev2 }}1"
     community.general.crypttab:
       name: "{{ dev2_name }}"
       backing_device: "UUID={{ dev2_uuid.stdout_lines[0] }}"
@@ -166,7 +166,7 @@
       group: '{{ gid }}'
       mode: '0755'
 
-  - name: "Add fstab entire for {{ btrfs_subvol_name }} subvolume"
+  - name: "Add fstab entry for {{ btrfs_subvol_name }} subvolume"
     mount:
       boot: yes
       path: "{{ mountpoint }}"
@@ -175,7 +175,7 @@
       opts: '{{ btrfs_mount_opts }},subvol={{ btrfs_subvol_name }}'
       state: "mounted"
 
-  - name: "Create luks header backup directory"
+  - name: "Create luks backup directory"
     file:
       path: '{{ mountpoint }}/.luks'
       state: 'directory'
@@ -194,6 +194,5 @@
     shell: |
       cryptsetup luksHeaderBackup {{ dev2 }}1 --header-backup-file {{ mountpoint }}/.luks/{{ dev2_uuid.stdout_lines[0] }}
       chmod 000 "{{ mountpoint }}/.luks/{{ dev2_uuid.stdout_lines[0] }}"
-
 
   become: yes

@@ -29,6 +29,6 @@ services:
       - 1900:1900/udp
     volumes:
       - "{{ docker_data }}/jellyfin:/config"
-      - "{{ docker_temp }}/jellyfin/cache:/cache"
-      - "{{ docker_temp }}/jellyfin/media:/media"
+      - "{{ docker_temp }}/jellyfin:/cache"
+      - "{{ docker_share }}/samba/jellyfin:/media"
       - "/etc/localtime:/etc/localtime:ro"

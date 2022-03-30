@@ -3,11 +3,10 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/jenkins"
-    - "{{ docker_data }}/jenkins"
     - "{{ docker_recipes }}/jenkins/container"
+    - "{{ docker_data }}/jenkins"
 
 - name: "Generate jenkins docker-compose file"
   template:

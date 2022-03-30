@@ -5,7 +5,8 @@ docker_data: '{{ docker_home }}/data'
 docker_recipes: '{{ docker_home }}/recipes'
 docker_logs: '{{ docker_home }}/log'
 docker_temp: '{{ docker_home }}/temp'
-docker_backup: "{{ backup_home }}/docker"
+docker_share: '{{ docker_home }}/share'
+docker_backup: "{{ backup_home }}/rsync"
 vagrant_recipes: '/opt/vagrant/recipes'
 duplicati_backup: "{{ backup_home }}/duplicati"
 develop: False

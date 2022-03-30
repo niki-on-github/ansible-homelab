@@ -3,12 +3,12 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/deluge"
     - "{{ docker_data }}/deluge"
     - "{{ docker_data }}/deluge/openvpn"
-    - "{{ docker_temp }}/deluge"
+    - "{{ docker_share }}/samba"
+    - "{{ docker_share }}/samba/deluge"
 
 - name: "Generate deluge docker-compose file"
   template:

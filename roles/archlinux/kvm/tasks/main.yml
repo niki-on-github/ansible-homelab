@@ -78,10 +78,17 @@
       enabled: 'yes'
     with_items:
       - 'libvirtd'
+      - 'libvirt-guests'
       - 'cockpit.socket'
       - 'pmcd.service'
       - 'pmlogger.service'
       - 'podman.socket'
+
+  - name: "Fix libvirt-guests service"
+    replace:
+      path: /usr/lib/libvirt/libvirt-guests.sh
+      regexp: '(^ON_SHUTDOWN=)(.*)$'
+      replace: '\1"shutdown"'
 
   - name: 'Create KVM directories'
     file:
@@ -89,7 +96,7 @@
       state: directory
       owner: "{{ username }}"
       group: "{{ gid }}"
-      recurse: yes
+      recurse: no
     with_items:
        -  "{{ vagrant_recipes }}"
 

@@ -10,32 +10,8 @@ global:
   - "force group = smb"
 
 share:
-  - name: Movies
-    path: /samba/movies
-    browsable: yes
-    readonly: no
-    guestok: no
-    validusers: smb
-    writelist: smb
-    veto: no
-  - name: Series
-    path: /samba/series
-    browsable: yes
-    readonly: no
-    guestok: no
-    validusers: smb
-    writelist: smb
-    veto: no
-  - name: Music
-    path: /samba/music
-    browsable: yes
-    readonly: no
-    guestok: no
-    validusers: smb
-    writelist: smb
-    veto: no
-  - name: Pictures
-    path: /samba/pictures
+  - name: samba
+    path: /samba
     browsable: yes
     readonly: no
     guestok: no

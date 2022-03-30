@@ -1,4 +1,64 @@
 #!/bin/bash
+# Description: Backup script
 
-rsync -av --delete {{ docker_data }} {{ docker_backup }} --log-file=/var/log/backup-docker-data.log
-rsync -av --delete {{ docker_recipes }} {{ docker_backup }} --log-file=/var/log/backup-docker-recipes.log
+if [ -f {{ docker_data }}/duplicati/scripts/stop-all-containers.sh ]; then
+    . {{ docker_data }}/duplicati/scripts/stop-all-containers.sh
+fi
+
+pushd {{ docker_recipes }}
+if [ ! -d .git ]; then
+    git init
+fi
+git config user.name "Backup Scheduler"
+git config user.email "backup@{{ domain }}"
+git add --all
+git commit -m "Backup $(date)"
+popd
+
+rsync \
+    -av \
+    --delete \
+    --log-file="{{ docker_logs }}/$(date +"%Y-%m-%d_%H-%M-%S")-data-rsync.log" \
+    {{ docker_data }} {{ docker_backup }}
+
+rsync \
+    -av \
+    --delete \
+    --log-file="{{ docker_logs }}/$(date +"%Y-%m-%d_%H-%M-%S")-recipes-rsync.log" \
+    {{ docker_recipes }} {{ docker_backup }}
+
+
+dest="{{ backup_home }}/borg"
+src="{{ docker_data }} {{ docker_recipes }}"
+repo_name="docker"
+encryption="none"
+compression="lz4"
+pruning="--keep-within=1d --keep-daily=7 --keep-weekly=4 --keep-monthly=12"
+logfile="{{ docker_logs }}/$(date +"%Y-%m-%d_%H-%M-%S")-borg.log"
+
+
+repo_path="$dest"/"$repo_name"
+
+if [ ! -d $repo_path ]; then
+  borg init --encryption=$encryption $repo_path
+fi
+
+borg create \
+    -v \
+    --stats \
+    --one-file-system \
+    --compression $compression \
+    $repo_path::'{hostname}-{now:%Y-%m-%d_%H-%M-%S}' \
+    $src \
+    >> $logfile 2>&1
+
+borg prune \
+    -v \
+    --list $repo_path \
+    --prefix '{hostname}-' \
+    $pruning \
+    >> $logfile 2>&1
+
+if [ -f {{ docker_data }}/duplicati/scripts/start-all-containers.sh ]; then
+    . {{ docker_data }}/duplicati/scripts/start-all-containers.sh
+fi

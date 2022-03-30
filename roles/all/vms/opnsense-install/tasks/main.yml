@@ -3,8 +3,8 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
+    - "{{ vagrant_recipes }}"
     - "{{ vagrant_recipes }}/opnsense"
 
 - name: "Copy provisioning files"
@@ -124,3 +124,10 @@
   register: pxe_server
   when: pxe_server_info.exists and pxe_server.changed
   become: yes
+
+- name: "Add default route to our network bridge if OPNsense is not provisioned"
+  shell:
+    cmd: "ip route add default via {{ gateway_ip }} dev {{ kvm_bridge_name }}"
+  become: yes
+  ignore_errors: True
+  when: "not provisioning_check.stat.exists"

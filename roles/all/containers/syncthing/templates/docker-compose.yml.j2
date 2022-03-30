@@ -15,7 +15,7 @@ services:
       PUID: {{ uid }}
       PGID: {{ gid }}
     volumes:
-      - "{{ docker_temp }}/syncthing:/var/syncthing"
+      - "{{ docker_share }}/syncthing:/var/syncthing"
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"

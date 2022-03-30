@@ -3,15 +3,10 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/samba"
     - "{{ docker_data }}/samba"
-    - "{{ docker_temp }}/samba"
-    - "{{ docker_temp }}/samba/music"
-    - "{{ docker_temp }}/samba/movies"
-    - "{{ docker_temp }}/samba/series"
-    - "{{ docker_temp }}/samba/pictures"
+    - "{{ docker_share }}/samba"
 
 - name: "Generate samba docker-compose file"
   template:

@@ -47,3 +47,26 @@ services:
       INFLUXDB_ADMIN_USER: "root"
       INFLUXDB_ADMIN_PASSWORD: "{{ webservices_password }}"
 
+  telegraf:
+    image: telegraf
+    container_name: telegraf
+    restart: unless-stopped
+    user: "telegraf:{{ docker_gid }}"
+    networks:
+      - default
+    depends_on:
+      - influxdb
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    environment:
+      HOST_PROC: /rootfs/proc
+      HOST_SYS: /rootfs/sys
+      HOST_ETC: /rootfs/etc
+      HOST_RUN: /rootfs/run
+      HOST_VAR: /rootfs/var
+      HOST_MOUNT_PREFIX: /rootfs
+    hostname: server
+    volumes:
+      - "{{ docker_data }}/monitoring-services/telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro"
+      - /var/run/docker.sock:/var/run/docker.sock:rw
+      - /:/rootfs:ro

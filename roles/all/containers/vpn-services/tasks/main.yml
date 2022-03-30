@@ -3,18 +3,18 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/vpn-services"
     - "{{ docker_data }}/vpn-services"
-    - "{{ docker_temp }}/vpn-services"
     - "{{ docker_data }}/vpn-services/vpn-router"
     - "{{ docker_data }}/vpn-services/nzbget"
     - "{{ docker_data }}/vpn-services/nzbget/config"
     - "{{ docker_data }}/vpn-services/nzbget/scripts"
     - "{{ docker_data }}/vpn-services/jdownloader"
-    - "{{ docker_temp }}/vpn-services/jdownloader"
-    - "{{ docker_temp }}/vpn-services/nzbget"
+    - "{{ docker_share }}/samba"
+    - "{{ docker_share }}/samba/vpn-services"
+    - "{{ docker_share }}/samba/vpn-services/jdownloader"
+    - "{{ docker_share }}/samba/vpn-services/nzbget"
 
 - name: "Copy nzbget scripts"
   copy:

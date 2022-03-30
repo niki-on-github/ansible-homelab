@@ -47,7 +47,7 @@
       state: directory
       owner: "{{ username }}"
       group: "docker"
-      recurse: yes
+      recurse: no
     with_items:
        -  "{{ docker_home }}"
 
@@ -76,12 +76,21 @@
       state: directory
       owner: "{{ username }}"
       group: "docker"
-      recurse: yes
+      recurse: no
     with_items:
-       -  "{{ docker_recipes }}"
-       -  "{{ docker_data }}"
-       -  "{{ docker_logs }}"
-       -  "{{ docker_temp }}"
+       - "{{ docker_home }}"
+       - "{{ docker_recipes }}"
+       - "{{ docker_data }}"
+       - "{{ docker_logs }}"
+       - "{{ docker_share }}"
+       - "{{ docker_temp }}"
+
+  - name: 'Restart docker systemd service to apply changes'
+    ansible.builtin.systemd:
+      name: 'docker'
+      state: 'restarted'
+      daemon_reload: yes
+      enabled: 'yes'
 
   become: yes
 

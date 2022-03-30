@@ -15,6 +15,7 @@ services:
       WEBSOCKET_ENABLED: "true"
       INVITATIONS_ALLOWED: "false"
       SIGNUPS_ALLOWED: "false"
+      ADMIN_TOKEN: "{{ webservices_password }}"
       TZ: "{{ timezone }}"
     labels:
       com.centurylinklabs.watchtower.enable: "true"

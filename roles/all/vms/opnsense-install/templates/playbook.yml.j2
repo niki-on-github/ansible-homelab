@@ -122,25 +122,32 @@
         community.general.xml:
           path: "/usr/local/etc/config.xml"
           xpath: "/opnsense/system/domain"
-          value: "{{ domain }}"
+          value: "{{ domain.split('.')[-1] }}"
           pretty_print: yes
 
-      - name: "Add domainoverrides tag to unbound"
+      - name: "Add hosts tag to unbound"
         community.general.xml:
           path: "/usr/local/etc/config.xml"
-          xpath: "/opnsense/unbound/domainoverrides"
+          xpath: "/opnsense/unbound/hosts"
           value: ""
           pretty_print: yes
 
-      - name: "Add Domain Override for {{ domain }} to unbound"
+      - name: "Add Host Override for {{ domain }} to unbound"
         community.general.xml:
           path: "/usr/local/etc/config.xml"
-          xpath: "/opnsense/unbound/domainoverrides"
+          xpath: "/opnsense/unbound/hosts"
           pretty_print: yes
           add_children:
+          - host: "*"
           - domain: "{{ domain }}"
+          - rr: "A"
           - ip: "{{ server_ip }}"
-          - descr: "Homelab Domain"
+          - mxprio: ""
+          - mx: ""
+          - descr: "Homelab Server"
+          - aliases:
+              _:
+                - item: ""
 
       - name: "Enable SSH"
         community.general.xml:

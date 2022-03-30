@@ -3,7 +3,6 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/authelia"
     - "{{ docker_data }}/authelia"
@@ -12,7 +11,7 @@
   template:
     src: "{{ item }}"
     dest: "{{ docker_data }}/authelia/{{ item | basename | regex_replace('\\.j2$', '') }}"
-    # force: off
+    force: off
   become: yes
   with_items:
     - "configuration.yml.j2"

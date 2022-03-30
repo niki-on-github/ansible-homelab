@@ -3,7 +3,6 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/monitoring-services"
     - "{{ docker_data }}/monitoring-services"
@@ -11,6 +10,7 @@
     - "{{ docker_data }}/monitoring-services/elasticsearch"
     - "{{ docker_data }}/monitoring-services/kibana"
     - "{{ docker_data }}/monitoring-services/logstash"
+    - "{{ docker_data }}/monitoring-services/telegraf"
 
 - name: "Create grafana directories with user id 472 and groop id 0"
   file:
@@ -19,6 +19,20 @@
     group: "0"
     state: directory
   become: yes
+
+- name: "Get docker gid"
+  getent:
+    database: group
+    key: docker
+
+- name: "Store docker gid in docker_gid"
+  set_fact:
+    docker_gid: "{{ getent_group.docker[1] }}"
+
+- name: "Generate telegraf config"
+  copy:
+    src: "files/telegraf/telegraf.conf"
+    dest: "{{ docker_data }}/monitoring-services/telegraf/telegraf.conf"
 
 - name: "Generate logstash Dockerfile"
   copy:

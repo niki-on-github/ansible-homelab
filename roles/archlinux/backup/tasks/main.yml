@@ -8,10 +8,19 @@
       state: directory
       owner: "{{ uid }}"
       group: "{{ gid }}"
-      recurse: yes
+      recurse: no
     with_items:
        - "{{ backup_home }}"
+       - "{{ backup_home }}/borg"
        - "{{ docker_backup }}"
+       - "{{ docker_logs }}"
+
+  - name: 'Install backup packages'
+    package:
+      name:
+        - borg
+        - rsync
+      state: latest
 
   - name: "Create backup service config"
     template:

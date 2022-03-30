@@ -6,5 +6,5 @@ Duplicati is a backup client that securely stores encrypted, incremental, compre
 
 In Point `5 Options` select the Advanced Options `run-script-before` and `run-script-after`. Then insert the paths:
 
-- `run-script-before`: `/scrips/stop-all-constainers.sh`
+- `run-script-before`: `/scripts/stop-all-containers.sh`
 - `run-script-after`: `/scripts/start-all-containers.sh`

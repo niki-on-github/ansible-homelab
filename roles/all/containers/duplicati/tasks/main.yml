@@ -3,7 +3,6 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/duplicati"
     - "{{ docker_recipes }}/duplicati/container"
@@ -15,7 +14,6 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
     owner: "{{ username }}"
     group: "docker"
     mode: 0755

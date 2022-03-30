@@ -3,10 +3,9 @@
   file:
     path: "{{ item }}"
     state: directory
-    recurse: yes
   with_items:
     - "{{ docker_recipes }}/syncthing"
-    - "{{ docker_temp }}/syncthing"
+    - "{{ docker_share }}/syncthing"
 
 - name: "Generate syncthing docker-compose file"
   template:

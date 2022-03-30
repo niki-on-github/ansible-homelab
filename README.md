@@ -1,6 +1,6 @@
 # Ansible Homelab
 
-This repo contains the Ansible playbooks and configuration used to manage and automate my arch based homelab. Feel free to look around. Be aware that I have configured my environment to fit my workflow. Still **WIP**
+This repo contains the Ansible playbooks and configuration used to manage and automate my arch based homelab. Feel free to look around. Be aware that I have configured my environment to fit my workflow.
 
 ## Setup
 
@@ -15,12 +15,6 @@ ansible-galaxy install -r requirements.yml
 ```bash
 ssh-keygen -a 100 -t ed25519 -f ~/.ssh/$KEYNAME -N "" -C ""
 ssh-copy-id -i ~/.ssh/$KEYNAME.pub USER@SERVER_IP
-```
-
-Test connection:
-
-```bash
-ansible all -m ping
 ```
 
 ### Store Passwords

@@ -3,9 +3,9 @@
   roles:
 
     # develop
-    # - role: develop/docker-clear
+    - role: develop/docker-clear
     # - role: archlinux/system
     # - role: archlinux/docker
-    - role: all/containers/traefik
-    - role: all/containers/vpn-services
+    # - role: all/containers/traefik
+    # - role: all/containers/vpn-services
 
