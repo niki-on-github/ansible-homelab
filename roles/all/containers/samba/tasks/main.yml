@@ -6,7 +6,7 @@
   with_items:
     - "{{ docker_recipes }}/samba"
     - "{{ docker_data }}/samba"
-    - "{{ docker_share }}/samba"
+    - "{{ docker_share }}"
 
 - name: "Generate samba docker-compose file"
   template:

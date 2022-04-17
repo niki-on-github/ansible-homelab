@@ -1,8 +1,15 @@
 #!/bin/bash
 # Description: Backup script
 
-if [ -f {{ docker_data }}/duplicati/scripts/stop-all-containers.sh ]; then
-    . {{ docker_data }}/duplicati/scripts/stop-all-containers.sh
+if [ -d {{ docker_recipes }}/paperless ]; then
+    echo "export paperless documents"
+    pushd "{{ docker_recipes }}/paperless"
+    docker-compose exec -T webserver document_exporter -d ../export
+    popd
+fi
+
+if [ -f {{ backup_tools_dir }}/docker/stop-all-containers.sh ]; then
+    . {{ backup_tools_dir }}/docker/stop-all-containers.sh
 fi
 
 pushd {{ docker_recipes }}
@@ -27,9 +34,15 @@ rsync \
     --log-file="{{ docker_logs }}/$(date +"%Y-%m-%d_%H-%M-%S")-recipes-rsync.log" \
     {{ docker_recipes }} {{ docker_backup }}
 
+rsync \
+    -av \
+    --delete \
+    --log-file="{{ docker_logs }}/$(date +"%Y-%m-%d_%H-%M-%S")-data-rsync.log" \
+    {{ docker_restore }} {{ docker_backup }}
 
-dest="{{ backup_home }}/borg"
-src="{{ docker_data }} {{ docker_recipes }}"
+
+dest="{{ backup_home_borg }}"
+src="{{ docker_data }} {{ docker_recipes }} {{ docker_restore }}"
 repo_name="docker"
 encryption="none"
 compression="lz4"
@@ -59,6 +72,6 @@ borg prune \
     $pruning \
     >> $logfile 2>&1
 
-if [ -f {{ docker_data }}/duplicati/scripts/start-all-containers.sh ]; then
-    . {{ docker_data }}/duplicati/scripts/start-all-containers.sh
+if [ -f {{ backup_tools_dir }}/docker/start-all-containers.sh ]; then
+    . {{ backup_tools_dir }}/docker/start-all-containers.sh
 fi

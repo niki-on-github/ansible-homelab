@@ -1,0 +1,25 @@
+---
+- name: "Create paperless directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/paperless"
+    - "{{ docker_data }}/paperless"
+    - "{{ docker_data }}/paperless/redisdata"
+    - "{{ docker_data }}/paperless/data"
+    - "{{ docker_data }}/paperless/media"
+    - "{{ docker_data }}/paperless/export"
+    - "{{ docker_share }}/paperless"
+    - "{{ docker_share }}/paperless/consume"
+
+- name: "Generate paperless docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/paperless/docker-compose.yml"
+
+- name: "Deploy paperless"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/paperless'
+    files:
+    - docker-compose.yml

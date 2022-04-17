@@ -20,4 +20,4 @@ services:
       com.centurylinklabs.watchtower.enable: "true"
     volumes:
       - "{{ docker_data }}/samba:/data"
-      - "{{ docker_share }}/samba:/samba"
+      - "{{ docker_share }}:/samba"

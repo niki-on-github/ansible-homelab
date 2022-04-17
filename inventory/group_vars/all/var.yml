@@ -1,12 +1,14 @@
 timezone: 'Europe/Berlin'
 backup_home: "/mnt/backup"
+backup_home_borg: "{{ backup_home }}/borg"
+backup_home_rsync: "{{ backup_home }}/rsync"
 docker_home: '/opt/docker'
 docker_data: '{{ docker_home }}/data'
 docker_recipes: '{{ docker_home }}/recipes'
+docker_restore: '{{ docker_home }}/restore'
 docker_logs: '{{ docker_home }}/log'
 docker_temp: '{{ docker_home }}/temp'
 docker_share: '{{ docker_home }}/share'
-docker_backup: "{{ backup_home }}/rsync"
+docker_backup: "{{ backup_home_rsync }}/docker"
 vagrant_recipes: '/opt/vagrant/recipes'
-duplicati_backup: "{{ backup_home }}/duplicati"
 develop: False

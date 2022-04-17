@@ -13,6 +13,7 @@
     package:
       name:
         - borg
+        - cpupower
         - htop
         - jq
         - kexec-tools

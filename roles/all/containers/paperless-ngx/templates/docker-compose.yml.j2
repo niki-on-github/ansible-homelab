@@ -1,0 +1,55 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+  paperless_backend:
+    external: false
+    name: paperless-backend
+
+services:
+
+  broker:
+    container_name: paperless-broker
+    image: redis:6.0
+    restart: unless-stopped
+    networks:
+      - paperless_backend
+    volumes:
+      - "{{ docker_data }}/paperless/redisdata:/data"
+
+  webserver:
+    image: ghcr.io/paperless-ngx/paperless-ngx:latest
+    container_name: paperless
+    restart: unless-stopped
+    networks:
+      - paperless_backend
+      - default
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.paperless.middlewares: "iframe-header@file"
+      traefik.http.routers.paperless.tls: "true"
+      traefik.http.routers.paperless.rule: "Host(`paperless.{{ domain }}`)"
+      traefik.http.routers.paperless.service: "paperless"
+      traefik.http.services.paperless.loadbalancer.server.port: "8000"
+    depends_on:
+      - broker
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    volumes:
+      - "{{ docker_data }}/paperless/data:/usr/src/paperless/data"
+      - "{{ docker_data }}/paperless/media:/usr/src/paperless/media"
+      - "{{ docker_data }}/paperless/export:/usr/src/paperless/export"
+      - "{{ docker_share }}/paperless/consume:/usr/src/paperless/consume"
+    environment:
+      PAPERLESS_REDIS: "redis://broker:6379"
+      USERMAP_UID: "{{ uid }}"
+      USERMAP_GID: "{{ gid }}"
+      PAPERLESS_TIME_ZONE: "{{ timezone }}"
+      PAPERLESS_OCR_LANGUAGES: "deu eng"
+      PAPERLESS_OCR_LANGUAGE: "deu"

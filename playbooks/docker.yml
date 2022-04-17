@@ -2,9 +2,6 @@
 - hosts: archlinux
   roles:
 
-    # develop
-    # - role: develop/docker-clear
-
     # system
     - role: archlinux/system
     - role: archlinux/docker

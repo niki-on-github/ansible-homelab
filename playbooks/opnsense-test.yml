@@ -2,7 +2,7 @@
 - hosts: archlinux
   roles:
 
-    - role: develop/vm-clean
+    # - role: develop/vm-clean
 
     # # system
     # - role: archlinux/system

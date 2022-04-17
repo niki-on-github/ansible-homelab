@@ -7,8 +7,7 @@
     - "{{ docker_recipes }}/deluge"
     - "{{ docker_data }}/deluge"
     - "{{ docker_data }}/deluge/openvpn"
-    - "{{ docker_share }}/samba"
-    - "{{ docker_share }}/samba/deluge"
+    - "{{ docker_share }}/deluge"
 
 - name: "Generate deluge docker-compose file"
   template:

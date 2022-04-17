@@ -1,0 +1,37 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  scrutiny:
+    image: lscr.io/linuxserver/scrutiny
+    container_name: scrutiny
+    restart: unless-stopped
+    cap_add:
+      - SYS_RAWIO
+      - SYS_ADMIN
+    environment:
+      PUID: "{{ uid }}"
+      PGID: "{{ gid }}"
+      TZ: "{{ timezone }}"
+      SCRUTINY_API_ENDPOINT: "http://localhost:8080"
+      SCRUTINY_WEB: "true"
+      SCRUTINY_COLLECTOR: "true"
+    volumes:
+      - "{{docker_data}}/scrutiny:/config"
+      - "/run/udev:/run/udev:ro"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.http.routers.smart.middlewares: "iframe-header@file"
+      traefik.http.routers.smart.tls: "true"
+      traefik.http.routers.smart.rule: "Host(`smart.{{ domain }}`)"
+      traefik.http.routers.smart.service: "smart"
+      traefik.http.services.smart.loadbalancer.server.port: "8080"
+    devices:
+      {% for dev in device_list %}
+- "{{ dev }}:{{ dev }}"
+      {% endfor %}

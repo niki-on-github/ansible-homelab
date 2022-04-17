@@ -11,10 +11,9 @@
     - "{{ docker_data }}/vpn-services/nzbget/config"
     - "{{ docker_data }}/vpn-services/nzbget/scripts"
     - "{{ docker_data }}/vpn-services/jdownloader"
-    - "{{ docker_share }}/samba"
-    - "{{ docker_share }}/samba/vpn-services"
-    - "{{ docker_share }}/samba/vpn-services/jdownloader"
-    - "{{ docker_share }}/samba/vpn-services/nzbget"
+    - "{{ docker_share }}/vpn-services"
+    - "{{ docker_share }}/vpn-services/jdownloader"
+    - "{{ docker_share }}/vpn-services/nzbget"
 
 - name: "Copy nzbget scripts"
   copy:

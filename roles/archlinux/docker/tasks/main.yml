@@ -84,6 +84,7 @@
        - "{{ docker_logs }}"
        - "{{ docker_share }}"
        - "{{ docker_temp }}"
+       - "{{ docker_restore }}"
 
   - name: 'Restart docker systemd service to apply changes'
     ansible.builtin.systemd:

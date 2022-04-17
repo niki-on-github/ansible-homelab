@@ -10,8 +10,11 @@
       group: "{{ gid }}"
       recurse: no
     with_items:
+       - "{{ backup_tools_dir }}"
+       - "{{ backup_tools_dir }}/docker"
        - "{{ backup_home }}"
-       - "{{ backup_home }}/borg"
+       - "{{ backup_home_borg }}"
+       - "{{ backup_home_rsync }}"
        - "{{ docker_backup }}"
        - "{{ docker_logs }}"
 
@@ -37,6 +40,18 @@
       owner: root
       group: root
       mode: 0640
+
+  - name: "Generate duplicati scripts"
+    template:
+      src: "{{ item }}"
+      dest: "{{ backup_tools_dir }}/docker/{{ item | basename | regex_replace('\\.j2$', '') }}"
+      owner: "{{ username }}"
+      group: "docker"
+      mode: 0755
+    with_items:
+      - "templates/stop-all-containers.sh.j2"
+      - "templates/start-all-containers.sh.j2"
+      - "templates/update-all-containers.sh.j2"
 
   - name: "Create backup script {{ backup_script }}"
     template:

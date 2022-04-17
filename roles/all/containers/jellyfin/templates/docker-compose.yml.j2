@@ -30,5 +30,5 @@ services:
     volumes:
       - "{{ docker_data }}/jellyfin:/config"
       - "{{ docker_temp }}/jellyfin:/cache"
-      - "{{ docker_share }}/samba/jellyfin:/media"
+      - "{{ docker_share }}/jellyfin:/media"
       - "/etc/localtime:/etc/localtime:ro"

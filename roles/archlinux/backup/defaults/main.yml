@@ -1,4 +1,5 @@
 ---
 backup_day: Sun
 backup_time: "03:00:00"
-backup_script: "/opt/backup.sh"
+backup_tools_dir: "/opt/backup-tools"
+backup_script: "{{ backup_tools_dir }}/backup.sh"

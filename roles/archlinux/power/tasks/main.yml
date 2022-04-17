@@ -1,0 +1,45 @@
+---
+- block:
+
+  - name: 'Install power control packages'
+    package:
+      name:
+        - cpupower
+      state: latest
+
+  - name: "Set CPU governor"
+    lineinfile:
+      dest: /etc/default/cpupower
+      regexp: "^#governor=.*"
+      line: "governor='ondemand'"
+    notify:
+      - 'Restart cpupower'
+
+  # usage example: cpu_min_freq="800MHz"
+  - name: "Set CPU min freq"
+    lineinfile:
+      dest: /etc/default/cpupower
+      regexp: "^#min_freq=.*"
+      line: "min_freq=\"{{ cpu_min_freq }}\""
+    when: cpu_min_freq is defined
+    notify:
+      - 'Restart cpupower'
+
+  # usage example: cpu_max_freq="2GHz"
+  - name: "Set CPU max freq"
+    lineinfile:
+      dest: /etc/default/cpupower
+      regexp: "^#max_freq=.*"
+      line: "max_freq=\"{{ cpu_max_freq }}\""
+    when: cpu_max_freq is defined
+    notify:
+      - 'Restart cpupower'
+
+  - name: 'Start cpupower daemon'
+    ansible.builtin.systemd:
+      name: 'cpupower'
+      state: 'started'
+      daemon_reload: yes
+      enabled: 'yes'
+
+  become: yes

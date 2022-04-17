@@ -1,4 +1,8 @@
 ---
+- name: "Show excluded docker images"
+  debug:
+    msg: "{{ exclude_dockers }}"
+
 - name: "Get list of container roles"
   delegate_to: localhost
   become: no
@@ -7,7 +11,7 @@
       - "{{ role_path }}/.."
     file_type: directory
     recurse: no
-    excludes: 'all'
+    excludes: "['all'] + {{ exclude_dockers }}"
   register: containers
 
 - include_role:

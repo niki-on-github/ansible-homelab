@@ -36,7 +36,7 @@ services:
       traefik.http.routers.privoxy.service: "deluge"
       traefik.http.services.privoxy.loadbalancer.server.port: "8118"
     volumes:
-      - "{{ docker_share }}/samba/deluge:/data"
+      - "{{ docker_share }}/deluge:/data"
       - "{{ docker_data }}/deluge:/config"
       - "/etc/localtime:/etc/localtime:ro"
     networks:

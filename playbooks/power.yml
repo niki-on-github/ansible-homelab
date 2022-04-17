@@ -1,0 +1,10 @@
+---
+- hosts: archlinux
+
+  vars:
+    cpu_min_freq: "800MHz"
+    cpu_max_freq: "2GHz"
+
+  roles:
+    - role: archlinux/power
+

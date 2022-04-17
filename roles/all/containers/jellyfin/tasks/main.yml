@@ -7,8 +7,7 @@
     - "{{ docker_recipes }}/jellyfin"
     - "{{ docker_data }}/jellyfin"
     - "{{ docker_temp }}/jellyfin"
-    - "{{ docker_share }}/samba"
-    - "{{ docker_share }}/samba/jellyfin"
+    - "{{ docker_share }}/jellyfin"
 
 - name: "Generate jellyfin docker-compose file"
   template:

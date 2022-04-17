@@ -1,12 +1,13 @@
 #!/bin/bash
 
 if [ -f /.dockerenv ]; then
+    # require docker + docker-compose installed in container!
     DOCKER_COMPOSE_RECIPIES="/source/{{ docker_recipes | basename }}"
-    DOCKER_COMPOSE_LOGS="/logs"
+    DOCKER_COMPOSE_RESTORE="/logs"
     FILTER="duplicati\|traefik\|vpn-services\|deluge\|homeassistant"
 else
     DOCKER_COMPOSE_RECIPIES="{{ docker_recipes }}"
-    DOCKER_COMPOSE_LOGS="{{ docker_logs }}"
+    DOCKER_COMPOSE_RESTORE="{{ docker_restore }}"
     FILTER="traefik\|vpn-services\|deluge\|homeassistant"
 fi
 
@@ -14,12 +15,10 @@ IFS=$'\n'
 for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" | grep -iv "$FILTER" | xargs -I {} dirname "{}") ; do
     cd "$recipe_path"
     service_name=$(basename "$recipe_path")
-    log_name="$(date +"%Y-%m-%d_%H-%M-%S")-stop.log"
-    mkdir -p $DOCKER_COMPOSE_LOGS/$service_name
-    docker inspect $(docker-compose images -q) 2>&1 > $DOCKER_COMPOSE_LOGS/$service_name/$log_name
-    docker-compose down 2>&1 &
+    log_name="$(date +"%Y-%m-%d_%H-%M-%S")-start.json"
+    docker-compose up -d 2>&1
+    mkdir -p $DOCKER_COMPOSE_RESTORE/$service_name
+    docker inspect $(docker-compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
 done
-unset IFS
 
-wait
-sleep 1
+unset IFS
