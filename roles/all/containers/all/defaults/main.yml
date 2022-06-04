@@ -1,2 +1,4 @@
 exclude_dockers:
   - "duplicati"
+  - "sftp"
+  - "nextcloud"

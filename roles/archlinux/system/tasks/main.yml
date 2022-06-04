@@ -17,6 +17,7 @@
         - htop
         - jq
         - kexec-tools
+        - ncdu
         - neovim
         - openssl
         - parted

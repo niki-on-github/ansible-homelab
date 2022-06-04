@@ -1,0 +1,6 @@
+---
+- hosts: archlinux
+  roles:
+
+    - role: archlinux/system
+    - role: archlinux/filesystem/luks_btrfs_mergerfs_snapraid

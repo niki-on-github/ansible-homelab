@@ -16,8 +16,10 @@ pushd {{ docker_recipes }}
 if [ ! -d .git ]; then
     git init
 fi
+git config init.defaultBranch "master"
 git config user.name "Backup Scheduler"
 git config user.email "backup@{{ domain }}"
+git config --global --add safe.directory {{ docker_recipes }}
 git add --all
 git commit -m "Backup $(date)"
 popd
@@ -75,3 +77,10 @@ borg prune \
 if [ -f {{ backup_tools_dir }}/docker/start-all-containers.sh ]; then
     . {{ backup_tools_dir }}/docker/start-all-containers.sh
 fi
+
+backup_archiv_name="backup_$(date +%Y-%m-%d)"
+backup_archiv_type=".tar.gz"
+echo "create new backup archives"
+tar cfz {{ backup_home_archiv }}/${backup_archiv_name}${backup_archiv_type} {{ backup_home_rsync }}
+echo "prune old backup archives"
+find {{ backup_home_archiv }}/*${backup_archiv_type} -mtime +30 -exec rm {} \;

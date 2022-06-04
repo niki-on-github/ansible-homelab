@@ -1,0 +1,42 @@
+---
+- name: "Create guacamole directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/guacamole"
+    - "{{ docker_data }}/guacamole"
+    - "{{ docker_data }}/guacamole/guacd"
+    - "{{ docker_data }}/guacamole/guacd/drive"
+    - "{{ docker_data }}/guacamole/guacd/record"
+    - "{{ docker_data }}/guacamole/postgres"
+    - "{{ docker_data }}/guacamole/postgres/init"
+    - "{{ docker_data }}/guacamole/postgres/data"
+
+- name: "Generate guacamole docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/guacamole/docker-compose.yml"
+
+- name: "Generate guacamole docker-compose environment variables file"
+  template:
+    src: env.j2
+    dest: "{{ docker_recipes }}/guacamole/.env"
+    force: no
+
+- name: "Check if {{ docker_data }}/guacamole/postgres/init/initdb.sql exists"
+  stat:
+    path: "{{ docker_data }}/guacamole/postgres/init/initdb.sql"
+  register: initdb
+
+- name: "Guacamole database setup"
+  shell:
+    cmd: docker run --rm guacamole/guacamole /opt/guacamole/bin/initdb.sh --postgres > ./init/initdb.sql
+    chdir: "{{ docker_data }}/guacamole/postgres"
+  when: not initdb.stat.exists
+
+- name: "Deploy guacamole"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/guacamole'
+    files:
+    - docker-compose.yml

@@ -1,0 +1,59 @@
+---
+- block:
+  # root
+
+  - name: "Verify that required role variables are defined"
+    assert:
+      that:
+        - "{{ item }} is defined"
+        - "{{ item }} | length > 0"
+        - "{{ item }} != None"
+      fail_msg: "{{ item }} needs to be set!"
+      success_msg: "Required variable {{ item }} is defined"
+    with_items:
+      - device
+      - keyfile
+      - luks_passphrase
+
+  - name: 'Get keyfile statistik'
+    ansible.builtin.stat:
+      path: "{{ keyfile }}"
+    register: xkeyfile
+
+  - name: "Check Keyfile attributes"
+    ansible.builtin.fail:
+      msg: "No valid keyfile found at '{{ keyfile }}'"
+    when: not xkeyfile.stat.exists or xkeyfile.stat.pw_name != 'root' or xkeyfile.stat.mode != '0000'
+
+  - name: "Create partition table on {{ device.path }}"
+    community.general.parted:
+      device: "{{ device.path }}"
+      label: gpt
+      number: 1
+      state: present
+      part_start: 1MiB
+      part_end: 100%
+
+  - name: "Create LUKS container luks_{{ device.name }} for {{ device.path }}1"
+    community.crypto.luks_device:
+      device: "{{ device.path }}1"
+      state: "opened"
+      name: "luks_{{ device.name }}"
+      keyfile: "{{ keyfile }}"
+      new_passphrase: "{{ luks_passphrase }}"
+
+  - name: "Get {{ device.path }}1 UUID"
+    ansible.builtin.shell:
+      cmd: "blkid {{ device.path }}1 -s UUID -o value"
+    register: dev_uuid
+    changed_when: false
+
+  - name: "Create crypttab entry for {{ device.path }}1"
+    community.general.crypttab:
+      name: "luks_{{ device.name }}"
+      backing_device: "UUID={{ dev_uuid.stdout_lines[0] }}"
+      state: present
+      password: "{{ keyfile }}"
+    no_log: true
+
+  become: yes

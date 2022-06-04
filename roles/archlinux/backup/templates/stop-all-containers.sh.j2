@@ -11,6 +11,9 @@ else
     FILTER="traefik\|vpn-services\|deluge\|homeassistant"
 fi
 
+previous_states_file="/tmp/docker.states"
+docker-compose ls > $previous_states_file
+
 IFS=$'\n'
 for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" | grep -iv "$FILTER" | xargs -I {} dirname "{}") ; do
     cd "$recipe_path"

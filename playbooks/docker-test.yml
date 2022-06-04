@@ -1,6 +1,0 @@
----
-- hosts: archlinux
-  roles:
-
-    - role: all/containers/file-browser
-

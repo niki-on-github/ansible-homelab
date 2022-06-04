@@ -1,0 +1,26 @@
+# SnapRAID configuration file
+
+# Parity locations
+{% set parity_disk_number = namespace(value=1) %}
+{% for disk in disks %}
+{% if disk.parity == true %}
+{{ parity_disk_number.value }}-parity /mnt/{{ mergerfs_pool_name }}/disks/{{ disk.name }}/snapraid.parity
+{% set parity_disk_number.value = parity_disk_number.value + 1 %}
+{% endif %}
+{% endfor %}
+
+# Content file locations
+# SnapRAID will need the content file to build a recovery. Multiple copies of this file are essential for maximum data safety!
+{% for disk in disks %}
+content /mnt/{{ mergerfs_pool_name }}/disks/{{ disk.name }}/.snapraid.content
+{% endfor %}
+
+# Data disks
+# The order of disks is relevant for parity!
+{% set data_disk_number = namespace(value=1) %}
+{% for disk in disks %}
+{% if disk.parity == false %}
+data d{{ data_disk_number.value }} /mnt/{{ mergerfs_pool_name }}/disks/{{ disk.name }}
+{% set data_disk_number.value = data_disk_number.value + 1 %}
+{% endif %}
+{% endfor %}

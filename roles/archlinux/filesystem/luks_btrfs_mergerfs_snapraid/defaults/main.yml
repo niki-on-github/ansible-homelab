@@ -1,0 +1,5 @@
+btrfs_mount_opts: "defaults,noatime,compress=lzo"
+btrfs_subvol_name: "@data"
+keyfile: "/disk.key"
+mergerfs_pool_name: "mergerfs01"
+mergerfs_data_disks_prefix: "data"

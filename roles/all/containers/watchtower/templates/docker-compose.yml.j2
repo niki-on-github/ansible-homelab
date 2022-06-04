@@ -12,6 +12,7 @@ services:
     restart: unless-stopped
     environment:
       WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
       TZ: "{{ timezone }}"
     networks:
       - isolated

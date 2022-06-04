@@ -1,0 +1,22 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  sftp:
+    image: atmoz/sftp
+    container_name: sftp
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    volumes:
+      - "{{ docker_share }}:/home/ftp/share"
+      - "{{ docker_data }}/sftp/users.conf:/etc/sftp/users.conf:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - default
+    ports:
+      - "2222:22"

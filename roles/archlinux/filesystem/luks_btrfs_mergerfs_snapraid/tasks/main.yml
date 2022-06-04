@@ -1,0 +1,91 @@
+---
+- block:
+
+  - name: 'Install required packages'
+    package:
+      name:
+        - cryptsetup
+        - parted
+        - fuse2
+        - fuse3
+      state: latest
+
+  - name: "Install mergerfs + snapraid package from AUR"
+    kewlfft.aur.aur:
+      name:
+        - mergerfs
+        - snapraid
+    become_user: aur_builder
+
+  - name: "Verify that specified devices exist"
+    include_tasks: dev_exists.yml
+    vars:
+      device: "{{ item }}"
+    with_items: "{{ disks }}"
+
+  - name: "Create Luks Container"
+    include_tasks: luks.yml
+    vars:
+      device: "{{ role_item }}"
+    loop_control:
+      loop_var: role_item
+    with_items: "{{ disks }}"
+
+  - name: "Create BTRFS Filesystem"
+    include_tasks: btrfs.yml
+    vars:
+      device: "{{ role_item }}"
+    loop_control:
+      loop_var: role_item
+    with_items: "{{ disks }}"
+
+  - name: "Create meta directory on each mergerfs device"
+    file:
+      path: '/mnt/{{ mergerfs_pool_name }}/disks/{{ item.name }}/.meta'
+      state: 'directory'
+      owner: '{{ uid }}'
+      group: '{{ gid }}'
+      mode: '0755'
+    with_items: "{{ disks }}"
+
+  - name: "Store disk name in .meta directory for each device"
+    copy:
+      dest: "/mnt/{{ mergerfs_pool_name }}/disks/{{ item.name }}/.meta/name"
+      content: |
+        {{ item.name }}
+    with_items: "{{ disks }}"
+
+  - name: "Create mount point for mergerfs"
+    file:
+      path: '/mnt/{{ mergerfs_pool_name }}/data'
+      state: 'directory'
+      owner: '{{ uid }}'
+      group: '{{ gid }}'
+      mode: '0755'
+
+  - name: "Mount the mergerfs array"
+    mount:
+      path: "/mnt/{{ mergerfs_pool_name }}/data"
+      src: "/mnt/{{ mergerfs_pool_name }}/disks/{{ mergerfs_data_disks_prefix }}*"
+      opts: "defaults,allow_other,minfreespace=25G,fsname={{ mergerfs_pool_name }},uid={{ uid }},gid={{ gid }}"
+      fstype: fuse.mergerfs
+      state: mounted
+
+  # NOTE: We want to use more than one snapraid array. Therefore do not create the configuration in the default path
+  # - name: "Generate snapraid configuration"
+  #   template:
+  #     src: snapraid.conf.j2
+  #     dest: "/etc/snapraid.conf"
+
+  - name: "Generate snapraid configuration"
+    template:
+      src: snapraid.conf.j2
+      dest: "/mnt/{{ mergerfs_pool_name }}/snapraid.conf"
+
+  # TODO: copy snapraid config to all devices
+  - name: "Initialize snapraid with new configuration"
+    ansible.builtin.shell:
+      cmd: "snapraid -c /mnt/{{ mergerfs_pool_name }}/snapraid.conf sync"
+
+  become: yes
+  when: disks[0] is defined

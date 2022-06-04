@@ -1,0 +1,28 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  ftp:
+    image: stilliard/pure-ftpd
+    container_name: ftp
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    volumes:
+      - "{{ docker_share }}:/home/ftp"
+      - "/etc/localtime:/etc/localtime:ro"
+    environment:
+      PUBLICHOST: "{{ server_ip }}"
+      FTP_USER_NAME: ftp
+      FTP_USER_PASS: "{{ webservices_password }}"
+      FTP_USER_HOME: /home/ftp
+    networks:
+      - default
+    ports:
+      - "21:21"
+      - "30000-30009:30000-30009"
+

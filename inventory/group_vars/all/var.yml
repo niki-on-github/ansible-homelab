@@ -2,6 +2,7 @@ timezone: 'Europe/Berlin'
 backup_home: "/mnt/backup"
 backup_home_borg: "{{ backup_home }}/borg"
 backup_home_rsync: "{{ backup_home }}/rsync"
+backup_home_archiv: "{{ backup_home }}/archiv"
 docker_home: '/opt/docker'
 docker_data: '{{ docker_home }}/data'
 docker_recipes: '{{ docker_home }}/recipes'

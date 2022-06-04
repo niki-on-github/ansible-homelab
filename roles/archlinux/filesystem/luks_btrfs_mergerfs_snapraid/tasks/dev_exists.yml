@@ -1,0 +1,10 @@
+- block:
+  - name: "Get {{ device.path }} statistics"
+    stat:
+      path: '{{ device.path }}'
+    register: dev_info
+
+  - name: "Check if {{ device.path }} exists"
+    fail:
+      msg: '{{ device.path }} does not exists!'
+    when: "not dev_info.stat.exists"

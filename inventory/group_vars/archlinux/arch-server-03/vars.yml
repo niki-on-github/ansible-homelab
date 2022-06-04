@@ -1,0 +1,9 @@
+disks:
+  - { path: "/dev/sda", name: "data01", parity: False }
+  - { path: "/dev/sdb", name: "data02", parity: False }
+  - { path: "/dev/sde", name: "data03", parity: False }
+  - { path: "/dev/sdf", name: "data04", parity: False }
+  - { path: "/dev/sdg", name: "data05", parity: False }
+  - { path: "/dev/sdi", name: "data06", parity: False }
+  - { path: "/dev/sdd", name: "parity01", parity: True }
+  - { path: "/dev/sdh", name: "parity02", parity: True }

@@ -15,6 +15,7 @@
        - "{{ backup_home }}"
        - "{{ backup_home_borg }}"
        - "{{ backup_home_rsync }}"
+       - "{{ backup_home_archiv }}"
        - "{{ docker_backup }}"
        - "{{ docker_logs }}"
 

@@ -1,0 +1,19 @@
+---
+- name: "Create ftp directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/ftp"
+    - "{{ docker_share }}"
+
+- name: "Generate ftp docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/ftp/docker-compose.yml"
+
+- name: "Deploy ftp"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/ftp'
+    files:
+    - docker-compose.yml

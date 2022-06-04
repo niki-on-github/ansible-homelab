@@ -11,14 +11,28 @@ else
     FILTER="traefik\|vpn-services\|deluge\|homeassistant"
 fi
 
+previous_states_file="/tmp/docker.states"
+
 IFS=$'\n'
 for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" | grep -iv "$FILTER" | xargs -I {} dirname "{}") ; do
     cd "$recipe_path"
     service_name=$(basename "$recipe_path")
     log_name="$(date +"%Y-%m-%d_%H-%M-%S")-start.json"
-    docker-compose up -d 2>&1
-    mkdir -p $DOCKER_COMPOSE_RESTORE/$service_name
-    docker inspect $(docker-compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
+
+    start_container=true
+    if [ -f $previous_states_file ]; then
+        if ! grep -q "^$service_name" $previous_states_file ; then
+            echo "Do not start $service_name"
+            start_container=false
+        fi
+    fi
+
+    if $start_container ; then
+        docker-compose up -d 2>&1
+        mkdir -p $DOCKER_COMPOSE_RESTORE/$service_name
+        docker inspect $(docker-compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
+    fi
 done
 
 unset IFS
+rm $previous_states_file

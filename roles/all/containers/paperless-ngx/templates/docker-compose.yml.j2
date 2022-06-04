@@ -48,6 +48,7 @@ services:
       - "{{ docker_share }}/paperless/consume:/usr/src/paperless/consume"
     environment:
       PAPERLESS_REDIS: "redis://broker:6379"
+      PAPERLESS_URL: "https://paperless.{{ domain }}"
       USERMAP_UID: "{{ uid }}"
       USERMAP_GID: "{{ gid }}"
       PAPERLESS_TIME_ZONE: "{{ timezone }}"

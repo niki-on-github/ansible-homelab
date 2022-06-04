@@ -1,0 +1,95 @@
+---
+- block:
+  # root
+
+  - name: "Verify that required role variables are defined"
+    assert:
+      that:
+        - "{{ item }} is defined"
+        - "{{ item }} | length > 0"
+        - "{{ item }} != None"
+      fail_msg: "{{ item }} needs to be set!"
+      success_msg: "Required variable {{ item }} is defined"
+    with_items:
+      - device
+
+  - name: "Create btrfs filesystem"
+    community.general.filesystem:
+      fstype: btrfs
+      dev: "/dev/mapper/luks_{{ device.name }}"
+      opts: "-L {{ device.name }}"
+
+  - name: "Create temporary mount point for btrfs root volume"
+    file:
+      path: '/tmp/tmp.mountpoint'
+      state: 'directory'
+      owner: '{{ uid }}'
+      group: '{{ gid }}'
+      mode: '0755'
+
+  - name: "Mount btrfs root volume"
+    mount:
+      path: "/tmp/tmp.mountpoint"
+      src: "LABEL={{ device.name }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }}'
+      state: "mounted"
+      fstab: /tmp/tmp.fstab
+    changed_when: false
+
+  - name: "Get btrfs submolume list"
+    command: "btrfs subvolume list /tmp/tmp.mountpoint"
+    register: subvolume_list
+    changed_when: false
+    failed_when: false
+    ignore_errors: true
+    no_log: true
+
+  - name: "Create subvolume {{ btrfs_subvol_name }} if not exists"
+    command: "btrfs subvolume create /tmp/tmp.mountpoint/{{ btrfs_subvol_name }}"
+    when: 'btrfs_subvol_name not in subvolume_list.stdout'
+
+  - name: "Unmount btrfs root volume"
+    mount:
+      path: "/tmp/tmp.mountpoint"
+      src: "LABEL={{ device.name }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }}'
+      state: "unmounted"
+      fstab: /tmp/tmp.fstab
+    changed_when: false
+
+  - name: "Create /mnt/{{ mergerfs_pool_name }} "
+    file:
+      path: '/mnt/{{ mergerfs_pool_name }}'
+      state: 'directory'
+      owner: '{{ uid }}'
+      group: '{{ gid }}'
+      mode: '0755'
+
+  - name: "Create /mnt/{{ mergerfs_pool_name }}/disks mount"
+    file:
+      path: '/mnt/{{ mergerfs_pool_name }}/disks/'
+      state: 'directory'
+      owner: '{{ uid }}'
+      group: '{{ gid }}'
+      mode: '0755'
+
+  - name: "Create mount point for {{ btrfs_subvol_name }} subvolume"
+    file:
+      path: '/mnt/{{ mergerfs_pool_name }}/disks/{{ device.name }}'
+      state: 'directory'
+      owner: '{{ uid }}'
+      group: '{{ gid }}'
+      mode: '0755'
+
+  - name: "Add fstab entry for {{ btrfs_subvol_name }} subvolume"
+    mount:
+      boot: yes
+      path: "/mnt/{{ mergerfs_pool_name }}/disks/{{ device.name }}"
+      src: "LABEL={{ device.name }}"
+      fstype: 'btrfs'
+      opts: '{{ btrfs_mount_opts }},subvol={{ btrfs_subvol_name }}'
+      state: "mounted"
+
+  become: yes
