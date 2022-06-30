@@ -13,17 +13,17 @@
     loop_control:
       loop_var: role_var
     with_items:
-      - dev1
-      - dev2
+      - storage_dev1
+      - storage_dev2
       - luks_passphrase
-      - mountpoint
-      - label
+      - storage_mountpoint
+      - storage_label
 
   - name: "Verify that specified devices exist"
     include_tasks: dev_exists.yml
     with_items:
-      - "{{ dev1 }}"
-      - "{{ dev2 }}"
+      - "{{ storage_dev1 }}"
+      - "{{ storage_dev2 }}"
 
   - name: 'Get keyfile statistik'
     ansible.builtin.stat:
@@ -50,35 +50,35 @@
       group: "root"
       mode: 0755
 
-  - name: "Create partition table on {{ dev1 }}"
+  - name: "Create partition table on {{ storage_dev1 }}"
     community.general.parted:
-      device: "{{ dev1 }}"
+      device: "{{ storage_dev1 }}"
       label: gpt
       number: 1
       state: present
       part_start: 1MiB
       part_end: 100%
 
-  - name: "Create partition table on {{ dev2 }}"
+  - name: "Create partition table on {{ storage_dev2 }}"
     community.general.parted:
-      device: "{{ dev2 }}"
+      device: "{{ storage_dev2 }}"
       label: gpt
       number: 1
       state: present
       part_start: 1MiB
       part_end: 100%
 
-  - name: "Create LUKS container {{ dev1_name }} for {{ dev1 }}1"
+  - name: "Create LUKS container {{ dev1_name }} for {{ storage_dev1 }}1"
     community.crypto.luks_device:
-      device: "{{ dev1 }}1"
+      device: "{{ storage_dev1 }}1"
       state: "opened"
       name: "{{ dev1_name }}"
       keyfile: "{{ keyfile }}"
       new_passphrase: "{{ luks_passphrase }}"
 
-  - name: "Create LUKS container {{ dev2_name }} for {{ dev2 }}1"
+  - name: "Create LUKS container {{ dev2_name }} for {{ storage_dev2 }}1"
     community.crypto.luks_device:
-      device: "{{ dev2 }}1"
+      device: "{{ storage_dev2 }}1"
       state: "opened"
       name: "{{ dev2_name }}"
       keyfile: "{{ keyfile }}"
@@ -88,7 +88,7 @@
     community.general.filesystem:
       fstype: btrfs
       dev: "/dev/mapper/{{ dev1_name }}"
-      opts: "-L {{ label }} -m raid1 -d raid1 /dev/mapper/{{ dev2_name }}"
+      opts: "-L {{ storage_label }} -m raid1 -d raid1 /dev/mapper/{{ dev2_name }}"
 
   - name: "Get {{ dev1 }}1 UUID"
     ansible.builtin.shell:
@@ -96,7 +96,7 @@
     register: dev1_uuid
     changed_when: false
 
-  - name: "Create crypttab entry for {{ dev1 }}1"
+  - name: "Create crypttab entry for {{ storage_dev1 }}1"
     community.general.crypttab:
       name: "{{ dev1_name }}"
       backing_device: "UUID={{ dev1_uuid.stdout_lines[0] }}"
@@ -104,13 +104,13 @@
       password: "{{ keyfile }}"
     no_log: true
 
-  - name: "Get {{ dev2 }}1 UUID"
+  - name: "Get {{ storage_dev2 }}1 UUID"
     ansible.builtin.shell:
-      cmd: "blkid {{ dev2 }}1 -s UUID -o value"
+      cmd: "blkid {{ storage_dev2 }}1 -s UUID -o value"
     register: dev2_uuid
     changed_when: false
 
-  - name: "Create crypttab entry for {{ dev2 }}1"
+  - name: "Create crypttab entry for {{ storage_dev2 }}1"
     community.general.crypttab:
       name: "{{ dev2_name }}"
       backing_device: "UUID={{ dev2_uuid.stdout_lines[0] }}"
@@ -129,7 +129,7 @@
   - name: "Mount btrfs root volume"
     mount:
       path: "/tmp/tmp.mountpoint"
-      src: "LABEL={{ label }}"
+      src: "LABEL={{ storage_label }}"
       fstype: 'btrfs'
       opts: '{{ btrfs_mount_opts }}'
       state: "mounted"
@@ -151,7 +151,7 @@
   - name: "Unmount btrfs root volume"
     mount:
       path: "/tmp/tmp.mountpoint"
-      src: "LABEL={{ label }}"
+      src: "LABEL={{ storage_label }}"
       fstype: 'btrfs'
       opts: '{{ btrfs_mount_opts }}'
       state: "unmounted"
@@ -160,7 +160,7 @@
 
   - name: "Create mount point for {{ btrfs_subvol_name }} subvolume"
     file:
-      path: '{{ mountpoint }}'
+      path: '{{ storage_mountpoint }}'
       state: 'directory'
       owner: '{{ uid }}'
       group: '{{ gid }}'
@@ -169,15 +169,15 @@
   - name: "Add fstab entry for {{ btrfs_subvol_name }} subvolume"
     mount:
       boot: yes
-      path: "{{ mountpoint }}"
-      src: "LABEL={{ label }}"
+      path: "{{ storage_mountpoint }}"
+      src: "LABEL={{ storage_label }}"
       fstype: 'btrfs'
       opts: '{{ btrfs_mount_opts }},subvol={{ btrfs_subvol_name }}'
       state: "mounted"
 
   - name: "Create luks backup directory"
     file:
-      path: '{{ mountpoint }}/.luks'
+      path: '{{ storage_mountpoint }}/.luks'
       state: 'directory'
       owner: '0'
       group: '0'
@@ -185,14 +185,14 @@
 
   # The header backup might change for example when new keys are added manually.
   # Therefore we need to do the following steps each time the role is executed.
-  - name: "Create LUKS header backup for {{ dev1 }}1"
+  - name: "Create LUKS header backup for {{ storage_dev1 }}1"
     shell: |
-      cryptsetup luksHeaderBackup {{ dev1 }}1 --header-backup-file {{ mountpoint }}/.luks/{{ dev1_uuid.stdout_lines[0] }}
-      chmod 000 "{{ mountpoint }}/.luks/{{ dev1_uuid.stdout_lines[0] }}"
+      cryptsetup luksHeaderBackup {{ storage_dev1 }}1 --header-backup-file {{ storage_mountpoint }}/.luks/{{ dev1_uuid.stdout_lines[0] }}
+      chmod 000 "{{ storage_mountpoint }}/.luks/{{ dev1_uuid.stdout_lines[0] }}"
 
-  - name: "Create LUKS header backup for {{ dev2 }}1"
+  - name: "Create LUKS header backup for {{ storage_dev2 }}1"
     shell: |
-      cryptsetup luksHeaderBackup {{ dev2 }}1 --header-backup-file {{ mountpoint }}/.luks/{{ dev2_uuid.stdout_lines[0] }}
-      chmod 000 "{{ mountpoint }}/.luks/{{ dev2_uuid.stdout_lines[0] }}"
+      cryptsetup luksHeaderBackup {{ storage_dev2 }}1 --header-backup-file {{ storage_mountpoint }}/.luks/{{ dev2_uuid.stdout_lines[0] }}
+      chmod 000 "{{ storage_mountpoint }}/.luks/{{ dev2_uuid.stdout_lines[0] }}"
 
   become: yes

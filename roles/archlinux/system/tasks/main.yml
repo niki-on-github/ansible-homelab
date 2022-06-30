@@ -22,6 +22,8 @@
         - openssl
         - parted
         - python-pip
+        - rsync
+        - sysstat
         - usbutils
       state: latest
 

@@ -82,5 +82,9 @@ backup_archiv_name="backup_$(date +%Y-%m-%d)"
 backup_archiv_type=".tar.gz"
 echo "create new backup archives"
 tar cfz {{ backup_home_archiv }}/${backup_archiv_name}${backup_archiv_type} {{ backup_home_rsync }}
+echo "compute recovery blocks"
+pushd {{ backup_home_archiv }}
+par2create -r5 -n1 {{ backup_home_archiv }}/${backup_archiv_name}${backup_archiv_type}
+popd
 echo "prune old backup archives"
-find {{ backup_home_archiv }}/*${backup_archiv_type} -mtime +30 -exec rm {} \;
+find {{ backup_home_archiv }}/*${backup_archiv_type}* -mtime +30 -exec rm {} \;

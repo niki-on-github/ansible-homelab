@@ -39,7 +39,7 @@
         - packagekit
         - python-vagrant
         - python-yaml
-        - qemu
+        - qemu-full
         - vagrant
         - virt-install
       state: latest

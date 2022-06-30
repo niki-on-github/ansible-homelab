@@ -7,17 +7,17 @@ server_ip: "10.0.1.10"
 subnet: "24"
 network_address: "{{ network_ip }}/{{ subnet }}"
 
-# use lsusb [<vendor>]:[<product>]
-# opnsense_usb_dev: "libvirt.usb :vendor => '0x0b95', :product => '0x7720'"
-
 # use lspci [<domain>]:[<bus>]:[<slot>].[<func>]
 opnsense_pci_dev: |
   libvirt.pci :domain => '0x0000', :bus => '0x04', :slot => '0x00', :function => '0x0'
   libvirt.pci :domain => '0x0000', :bus => '0x04', :slot => '0x00', :function => '0x1'
 
+opnsense_wan_interface: "igb0"
+opnsense_lan_interface: "vtnet0"
 opnsense_dhcp_server_enabled: true
 
-dev1: "/dev/sda"
-dev2: "/dev/sdb"
-label: "data01"
-mountpoint: "/mnt/backup"
+storage_dev1: "/dev/sda"
+storage_dev2: "/dev/sdb"
+storage_label: "data01"
+storage_mountpoint: "/mnt/backup"
+

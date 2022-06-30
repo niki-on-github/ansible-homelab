@@ -24,6 +24,7 @@
       name:
         - borg
         - rsync
+        - par2cmdline
       state: latest
 
   - name: "Create backup service config"
@@ -42,7 +43,7 @@
       group: root
       mode: 0640
 
-  - name: "Generate duplicati scripts"
+  - name: "Generate docker helper scripts"
     template:
       src: "{{ item }}"
       dest: "{{ backup_tools_dir }}/docker/{{ item | basename | regex_replace('\\.j2$', '') }}"
