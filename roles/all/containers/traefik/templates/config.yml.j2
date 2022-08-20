@@ -1,6 +1,16 @@
-
+# set yaml schema through modeline (vscode-yaml extension): traefik dynamic schema
+# yaml-language-server: $schema=https://json.schemastore.org/traefik-v2-file-provider.json
+---
 http:
   routers:
+
+    root:
+      rule: "Host(`{{ domain }}`)"
+      service: "noop@internal"
+      tls: {}
+      middlewares:
+        - root-redirect
+        - iframe-header
 
     adguard:
       rule: "Host(`adguard.{{ domain }}`)"
@@ -40,7 +50,8 @@ http:
       forwardAuth:
         address: "http://authelia:9091/api/verify?rd=https://auth.{{ domain }}"
         trustForwardHeader: true
-        authResponseHeaders: "X-Forwarded-User"
+        authResponseHeaders:
+        - "X-Forwarded-User"
 
     https-redirect:
       redirectScheme:
@@ -50,6 +61,12 @@ http:
       headers:
         customFrameOptionsValue: "SAMEORIGIN"
         contentSecurityPolicy: "frame-ancestors 'self' {{domain}} *.{{domain}} ;"
+
+    root-redirect:
+      redirectregex:
+        regex: "^https://{{ domain }}/(.*)"
+        replacement: "https://home.{{ domain }}/${1}"
+        permanent: true
 
 
   services:
@@ -81,10 +98,8 @@ http:
 
 tls:
   certificates:
-    certFile: "/certs/{{ domain }}.crt"
-    keyFile: "/certs/{{ domain }}.key"
-    stores:
-        - "default"
+    - certFile: "/certs/{{ domain }}.crt"
+      keyFile: "/certs/{{ domain }}.key"
   stores:
     default:
         defaultCertificate:

@@ -1,0 +1,146 @@
+version: "3"
+
+networks:
+  public_backend:
+    external: false
+    name: public-backend
+    internal: true
+  public_out:
+    name: public-out
+
+services:
+
+  traefik:
+    image: "traefik"
+    container_name: traefik-public
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "public-out"
+      traefik.constraints: "public"
+      traefik.http.routers.traefik: "true"
+      traefik.http.routers.traefik.middlewares: "iframe-header@file"
+      autoheal-public: "true"
+    network_mode: service:tailscale
+    depends_on:
+      - tailscale
+    volumes:
+      - "{{ docker_data }}/public-services/traefik/certs:/certs"
+      - "{{ docker_data }}/public-services/traefik/config/config.yml:/etc/traefik/config.yml:ro"
+      - "{{ docker_data }}/public-services/traefik/config/traefik.yml:/etc/traefik/traefik.yml:ro"
+      - "{{ docker_data }}/public-services/traefik/log:/log:rw"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+    healthcheck:
+      test: ["CMD-SHELL", "[ -f /certs/{{ ts_machine_name }}.{{ ts_domain }}.crt ] || exit 1"]
+      interval: 20s
+      timeout: 10s
+      retries: 10
+      start_period: 10s
+
+
+  autoheal:
+    image: willfarrell/autoheal
+    container_name: autoheal-public
+    restart: unless-stopped
+    network_mode: none
+    volumes:
+      - '/var/run/docker.sock:/var/run/docker.sock'
+      - '/etc/localtime:/etc/localtime:ro'
+    environment:
+      - AUTOHEAL_INTERVAL=10
+      - CURL_TIMEOUT=30
+      - AUTOHEAL_CONTAINER_LABEL=autoheal-public
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+
+
+  tailscale:
+    build: ./tailscale-relay
+    container_name: tailscale
+    hostname: "{{ ts_machine_name }}"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    networks:
+      - public_backend
+      - public_out
+    cap_add:
+      - NET_ADMIN
+    environment:
+      AUTHKEY: "{{ tailscale_auth_key }}"
+    volumes:
+      - "{{ docker_data }}/public-services/tailscale:/tailscale"
+      - "{{ docker_data }}/public-services/traefik/certs:/certs"
+
+
+  vaultwarden:
+    image: "vaultwarden/server"
+    container_name: vaultwarden-public
+    restart: unless-stopped
+    environment:
+      DOMAIN: "https://{{ ts_machine_name }}.{{ ts_domain }}/vaultwarden"
+      WEBSOCKET_ENABLED: "true"
+      INVITATIONS_ALLOWED: "false"
+      SIGNUPS_ALLOWED: "false"
+      TZ: "{{ timezone }}"
+    env_file:
+      - .env
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "public-backend"
+      traefik.constraints: "public"
+      traefik.http.routers.vaultwarden-public.tls: "true"
+      traefik.http.routers.vaultwarden-public.rule: "Host(`{{ ts_machine_name }}.{{ ts_domain }}`) && PathPrefix(`/vaultwarden`)"
+      traefik.http.routers.vaultwarden-public.service: "vaultwarden-public"
+      traefik.http.routers.vaultwarden-public-websocket.tls: "true"
+      traefik.http.routers.vaultwarden-public-websocket.rule: "Host(`{{ ts_machine_name }}.{{ ts_domain }}`) && PathPrefix(`/vaultwarden/notifications/hub`)"
+      traefik.http.routers.vaultwarden-public-websocket.service: "vaultwarden-public-websocket"
+      traefik.http.services.vaultwarden-public.loadbalancer.server.port: "80"
+      traefik.http.services.vaultwarden-public-websocket.loadbalancer.server.port: "3012"
+      traefik.http.routers.vaultwarden-public.middlewares: "vaultwarden-public"
+      traefik.http.middlewares.vaultwarden-public.headers.customFrameOptionsValue: "SAMEORIGIN"
+      traefik.http.middlewares.vaultwarden-public.headers.contentSecurityPolicy: "frame-ancestors 'self' {{ts_domain}} *.{{ts_domain}} chrome-extension://nngceckbapebfimnlniiiahkandclblb chrome-extension://jbkfoedolllekgbhcbcoahefnbanhhlh moz-extension://* ;"
+    networks:
+      - public_backend
+    volumes:
+      - "{{docker_data}}/public-services/vaultwarden:/data:rw"
+
+
+  gitea:
+    image: gitea/gitea:1
+    container_name: gitea-public
+    restart: unless-stopped
+    environment:
+      USER_UID: "{{uid}}"
+      USER_GID: "{{gid}}"
+      SSH_LISTEN_PORT: 22
+      SSH_PORT: 222
+      LFS_START_SERVER: "true"
+      APP_NAME: "gitea"
+      DOMAIN: "{{ ts_machine_name }}.{{ ts_domain }}"
+      ROOT_URL: "https://{{ ts_machine_name }}.{{ ts_domain }}/git/"
+      SSH_DOMAIN: "{{ ts_machine_name }}.{{ ts_domain }}"
+      DISABLE_REGISTRATION: "true"
+      REQUIRE_SIGNIN_VIEW: "true"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "public-backend"
+      traefik.constraints: "public"
+      traefik.http.routers.git-public.middlewares: "iframe-header@file,git-public"
+      traefik.http.routers.git-public.tls: "true"
+      traefik.http.routers.git-public.rule: "Host(`{{ ts_machine_name }}.{{ ts_domain }}`) && PathPrefix(`/git`)"
+      traefik.http.middlewares.git-public.stripprefix.prefixes: "/git"
+      traefik.http.routers.git-public.service: "git-public"
+      traefik.http.services.git-public.loadbalancer.server.port: "3000"
+      traefik.tcp.routers.git-public-ssh.rule: "HostSNI(`*`)"
+      traefik.tcp.routers.git-public-ssh.entrypoints: "ssh"
+      traefik.tcp.routers.git-public-ssh.service: "git-public-ssh"
+      traefik.tcp.services.git-public-ssh.loadbalancer.server.port: "22"
+    volumes:
+      - "{{docker_data}}/public-services/gitea:/data"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - public_backend

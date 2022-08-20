@@ -17,6 +17,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.jellyfin.middlewares: "iframe-header@file"
       traefik.http.routers.jellyfin.tls: "true"
       traefik.http.routers.jellyfin.rule: "Host(`jellyfin.{{ domain }}`)"

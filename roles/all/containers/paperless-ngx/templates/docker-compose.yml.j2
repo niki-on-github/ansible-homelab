@@ -19,7 +19,8 @@ services:
     volumes:
       - "{{ docker_data }}/paperless/redisdata:/data"
 
-  webserver:
+  # do not add healthcheck! Else paperless-ngx wont work relayable with traefik (#1347)
+  paperless:
     image: ghcr.io/paperless-ngx/paperless-ngx:latest
     container_name: paperless
     restart: unless-stopped
@@ -29,6 +30,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.paperless.middlewares: "iframe-header@file"
       traefik.http.routers.paperless.tls: "true"
       traefik.http.routers.paperless.rule: "Host(`paperless.{{ domain }}`)"
@@ -36,11 +39,6 @@ services:
       traefik.http.services.paperless.loadbalancer.server.port: "8000"
     depends_on:
       - broker
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
     volumes:
       - "{{ docker_data }}/paperless/data:/usr/src/paperless/data"
       - "{{ docker_data }}/paperless/media:/usr/src/paperless/media"
@@ -54,3 +52,4 @@ services:
       PAPERLESS_TIME_ZONE: "{{ timezone }}"
       PAPERLESS_OCR_LANGUAGES: "deu eng"
       PAPERLESS_OCR_LANGUAGE: "deu"
+

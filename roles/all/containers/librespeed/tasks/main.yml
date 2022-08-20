@@ -17,3 +17,4 @@
     project_src: '{{ docker_recipes }}/librespeed'
     files:
     - docker-compose.yml
+    remove_orphans: true

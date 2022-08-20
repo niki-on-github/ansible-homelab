@@ -19,3 +19,4 @@
     project_src: '{{ docker_recipes }}/jellyfin'
     files:
     - docker-compose.yml
+    remove_orphans: true

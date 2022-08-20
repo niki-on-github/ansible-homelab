@@ -20,6 +20,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.vaultwarden.tls: "true"
       traefik.http.routers.vaultwarden.rule: "Host(`vaultwarden.{{ domain }}`)"
       traefik.http.routers.vaultwarden.service: "vaultwarden"

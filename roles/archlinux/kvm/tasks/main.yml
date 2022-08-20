@@ -40,6 +40,7 @@
         - python-vagrant
         - python-yaml
         - qemu-full
+        - swtpm
         - vagrant
         - virt-install
       state: latest

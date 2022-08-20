@@ -1,0 +1,5 @@
+# public services
+
+Public accessible service via tailscale.
+
+MagicDNS do not support subdomains on tailscale machine for now (see [#3847](https://github.com/tailscale/tailscale/issues/3847)). As long this issue is not addressed we can not use method to publish our services.

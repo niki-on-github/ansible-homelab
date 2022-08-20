@@ -57,6 +57,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.guacamole.middlewares: "iframe-header@file,add-guacamole-context"
       traefik.http.routers.guacamole.tls: "true"
       traefik.http.routers.guacamole.rule: "Host(`guacamole.{{ domain }}`)"

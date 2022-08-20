@@ -7,6 +7,8 @@
     - "{{ docker_recipes }}/monitoring-services"
     - "{{ docker_data }}/monitoring-services"
     - "{{ docker_data }}/monitoring-services/influxdb"
+    - "{{ docker_data }}/monitoring-services/postgres"
+    - "{{ docker_data }}/monitoring-services/uptime-kuma"
     - "{{ docker_data }}/monitoring-services/elasticsearch"
     - "{{ docker_data }}/monitoring-services/kibana"
     - "{{ docker_data }}/monitoring-services/logstash"
@@ -18,7 +20,7 @@
     owner: "472"
     group: "0"
     state: directory
-  become: yes
+  become: True
 
 - name: "Get docker gid"
   getent:
@@ -30,8 +32,8 @@
     docker_gid: "{{ getent_group.docker[1] }}"
 
 - name: "Generate telegraf config"
-  copy:
-    src: "files/telegraf/telegraf.conf"
+  template:
+    src: "telegraf/telegraf.conf.j2"
     dest: "{{ docker_data }}/monitoring-services/telegraf/telegraf.conf"
 
 - name: "Generate logstash Dockerfile"
@@ -49,3 +51,4 @@
     project_src: '{{ docker_recipes }}/monitoring-services'
     files:
     - docker-compose.yml
+    remove_orphans: true

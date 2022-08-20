@@ -26,6 +26,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.smart.middlewares: "iframe-header@file"
       traefik.http.routers.smart.tls: "true"
       traefik.http.routers.smart.rule: "Host(`smart.{{ domain }}`)"

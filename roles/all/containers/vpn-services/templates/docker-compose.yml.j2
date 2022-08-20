@@ -18,6 +18,8 @@ services:
       - NET_ADMIN
     labels:
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.vpn.middlewares: "iframe-header@file"
       traefik.http.routers.vpn.tls: "true"
       traefik.http.routers.vpn.rule: "Host(`vpn.{{ domain }}`)"

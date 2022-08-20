@@ -17,3 +17,4 @@
     project_src: '{{ docker_recipes }}/portainer'
     files:
     - docker-compose.yml
+    remove_orphans: true

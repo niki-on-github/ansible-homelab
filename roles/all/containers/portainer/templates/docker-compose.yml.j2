@@ -13,6 +13,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.portainer.middlewares: "iframe-header@file"
       traefik.http.routers.portainer.tls: "true"
       traefik.http.routers.portainer.rule: "Host(`portainer.{{ domain }}`)"

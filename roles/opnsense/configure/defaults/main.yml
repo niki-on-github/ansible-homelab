@@ -1,3 +1,4 @@
 opn_plugins:
   - os-qemu-guest-agent
   - os-wireguard
+  - os-telegraf

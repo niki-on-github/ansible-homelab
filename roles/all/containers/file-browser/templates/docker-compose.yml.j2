@@ -17,6 +17,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.filebrowser.middlewares: "iframe-header@file"
       traefik.http.routers.filebrowser.tls: "true"
       traefik.http.routers.filebrowser.rule: "Host(`filebrowser.{{ domain }}`)"

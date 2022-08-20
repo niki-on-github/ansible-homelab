@@ -79,7 +79,8 @@
     organization_name: "Homelab"
     email_address: "root@{{ domain }}"
     common_name: "{{ domain }}"
-    subject_alt_name: 'DNS:*.{{ domain }}'
+    subject_alt_name: 'DNS:{{ domain }},DNS:*.{{ domain }}'
+    # force: true # if you change values use force to override existing sign request!
 
 - name: "Generate an traefik server certificate signed with your own CA certificate"
   community.crypto.x509_certificate:
@@ -98,6 +99,7 @@
     project_src: '{{ docker_recipes }}/traefik'
     files:
     - docker-compose.yml
+    remove_orphans: true
 
 - name: "Create CA folder on ansible host"
   file:

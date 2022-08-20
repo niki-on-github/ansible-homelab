@@ -19,42 +19,10 @@
         project_src: '{{ docker_recipes }}/wireguard-server'
         files:
         - docker-compose.yml
+        remove_orphans: true
   rescue:
       - name: "Print error message"
         debug:
           msg: 'If ansible have install a new kernel you have to reboot to get a working wireguard-server kernel module for this docker container!'
 
-- name: "Wait for wireguard-server startup"
-  wait_for:
-    timeout: 10
-  delegate_to: localhost
 
-- name: "Create wireguard keys folder on ansible host"
-  file:
-    path: "{{ item }}"
-    state: directory
-    mode: 0755
-  delegate_to: localhost
-  with_items:
-    - "{{ role_path }}/../../../../files/wireguard"
-
-- name: "Find wireguard client keys folders"
-  find:
-    paths: "{{ docker_data }}/wireguard-server"
-    recurse: no
-    patterns: "peer*"
-    file_type: "directory"
-  register: folders_to_copy
-
-- name: "Download wireguard client keys"
-  synchronize:
-    src: "{{ item.path }}"
-    dest: "{{ role_path }}/../../../../files/wireguard"
-    mode: pull
-  with_items: "{{ folders_to_copy.files }}"
-
-- name: "Download wireguard server keys"
-  synchronize:
-    src: "{{ docker_data }}/wireguard-server/server"
-    dest: "{{ role_path }}/../../../../files/wireguard"
-    mode: pull

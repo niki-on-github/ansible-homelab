@@ -1,0 +1,39 @@
+# set yaml schema through modeline (vscode-yaml extension): traefik dynamic schema
+# yaml-language-server: $schema=https://json.schemastore.org/traefik-v2-file-provider.json
+---
+
+global:
+  sendAnonymousUsage: false
+
+api:
+  dashboard: true
+  insecure: true
+
+providers:
+  docker:
+    constraints: "Label(`traefik.constraints`,`public`)"
+    endpoint: "unix:///var/run/docker.sock"
+    watch: true
+    exposedByDefault: false
+
+  file:
+    filename: /etc/traefik/config.yml
+    watch: true
+
+log:
+  level: "{{ traefik_log_level }}"
+  format: common
+  filePath: "/log/traefik.log"
+
+entryPoints:
+  http:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: https
+          scheme: https
+  https:
+    address: ":443"
+  ssh:
+    address: ":222"

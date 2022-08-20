@@ -1,20 +1,15 @@
 version: "3"
 
-networks:
-  isolated:
-    external: true
-    name: isolated
-
 services:
   watchtower:
     image: "containrrr/watchtower"
     container_name: watchtower
     restart: unless-stopped
+    network_mode: none
     environment:
+      WATCHTOWER_SCHEDULE: "0 0 4 * * *"
       WATCHTOWER_LABEL_ENABLE: "true"
       WATCHTOWER_CLEANUP: "true"
       TZ: "{{ timezone }}"
-    networks:
-      - isolated
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock

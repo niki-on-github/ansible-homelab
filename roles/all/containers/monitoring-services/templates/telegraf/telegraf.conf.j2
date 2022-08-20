@@ -1,0 +1,67 @@
+[global_tags]
+  # user = "$USER"
+
+[agent]
+  interval = "10s"
+  round_interval = true
+  metric_batch_size = 1000
+  metric_buffer_limit = 10000
+  collection_jitter = "0s"
+  flush_interval = "10s"
+  flush_jitter = "0s"
+  precision = "0s"
+  hostname = ""
+  omit_hostname = false
+
+[[outputs.influxdb]]
+  urls = ["http://influxdb:8086"]
+  database = "server-telegraf"
+  skip_database_creation = false
+  timeout = "5s"
+  username = "root"
+  password = "{{ webservices_password }}"
+  user_agent = "telegraf"
+
+  ## UDP payload size is the maximum packet size to send.
+  # udp_payload = "512B"
+
+  ## Optional TLS Config for use on HTTP connections.
+  # tls_ca = "/etc/telegraf/ca.pem"
+  # tls_cert = "/etc/telegraf/cert.pem"
+  # tls_key = "/etc/telegraf/key.pem"
+  ## Use TLS but skip chain & host verification
+  # insecure_skip_verify = false
+
+
+[[inputs.cpu]]
+  percpu = true
+  totalcpu = true
+  collect_cpu_time = false
+  report_active = false
+
+[[inputs.disk]]
+  ignore_fs = ["tmpfs", "devtmpfs", "devfs", "iso9660", "overlay", "aufs", "squashfs"]
+
+[[inputs.diskio]]
+  # By default, telegraf will gather stats for all devices including disk partitions.
+
+[[inputs.kernel]]
+  # no configuration
+
+[[inputs.mem]]
+  # no configuration
+
+[[inputs.processes]]
+  # no configuration
+
+[[inputs.swap]]
+  # no configuration
+
+[[inputs.system]]
+  # fielddrop = ["uptime_format"]
+
+[[inputs.docker]]
+  endpoint = "unix:///var/run/docker.sock"
+
+[[inputs.net]]
+  # By default, telegraf gathers stats from any up interface (excluding loopback)

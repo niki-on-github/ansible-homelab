@@ -34,3 +34,4 @@
     project_src: '{{ docker_recipes }}/filebrowser'
     files:
     - docker-compose.yml
+    remove_orphans: true

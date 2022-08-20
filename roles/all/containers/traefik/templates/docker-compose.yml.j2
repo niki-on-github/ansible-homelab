@@ -13,12 +13,15 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.traefik: "true"
       traefik.http.routers.traefik.middlewares: "iframe-header@file"
     networks:
       - default
     ports:
       - "80:80"
+      - "222:222"
       - "443:443"
       - "8080:8080"
     volumes:

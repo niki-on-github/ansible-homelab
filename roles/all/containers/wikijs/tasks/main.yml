@@ -24,3 +24,4 @@
     project_src: '{{ docker_recipes }}/wikijs'
     files:
     - docker-compose.yml
+    remove_orphans: true

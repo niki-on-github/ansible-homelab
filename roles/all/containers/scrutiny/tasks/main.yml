@@ -31,6 +31,11 @@
     project_src: '{{ docker_recipes }}/scrutiny'
     files:
     - docker-compose.yml
+    remove_orphans: true
+
+- name: "Wait for scrutiny startup"
+  pause:
+    seconds: 20
 
 - name: "Update device list inside docker"
   shell:

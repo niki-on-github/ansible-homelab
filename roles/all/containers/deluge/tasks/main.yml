@@ -29,3 +29,4 @@
     project_src: '{{ docker_recipes }}/deluge'
     files:
     - docker-compose.yml
+    remove_orphans: true

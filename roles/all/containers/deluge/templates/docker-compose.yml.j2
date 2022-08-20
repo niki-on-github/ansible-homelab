@@ -26,6 +26,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.deluge.middlewares: "iframe-header@file"
       traefik.http.routers.deluge.tls: "true"
       traefik.http.routers.deluge.rule: "Host(`deluge.{{ domain }}`)"

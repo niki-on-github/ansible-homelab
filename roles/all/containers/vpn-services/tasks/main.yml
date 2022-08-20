@@ -63,3 +63,4 @@
     project_src: '{{ docker_recipes }}/vpn-services'
     files:
     - docker-compose.yml
+    remove_orphans: true

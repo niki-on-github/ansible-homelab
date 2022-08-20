@@ -15,6 +15,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.webdav.middlewares: "iframe-header@file"
       traefik.http.routers.webdav.tls: "true"
       traefik.http.routers.webdav.rule: "Host(`webdav.{{ domain }}`)"

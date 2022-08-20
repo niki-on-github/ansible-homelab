@@ -40,3 +40,4 @@
     project_src: '{{ docker_recipes }}/guacamole'
     files:
     - docker-compose.yml
+    remove_orphans: true

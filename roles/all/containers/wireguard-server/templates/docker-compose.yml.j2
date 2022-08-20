@@ -7,23 +7,17 @@ networks:
 
 services:
   wireguard:
-    image: linuxserver/wireguard
+    image: weejewel/wg-easy
     container_name: wireguard
     restart: unless-stopped
     environment:
       PUID: "{{ uid }}"
       PGID: "{{ gid }}"
       TZ: "{{ timezone }}"
-      SERVERURL: "wireguard.{{ domain }}"
-      SERVERPORT: 51820
-      PEERS: 5
-      INTERNAL_SUBNET: 10.13.13.0
-    ports:
-      - 51820:51820/udp
+      WG_HOST: "wireguard.{{ domain }}"
+      PASSWORD: "{{ webservices_password }}"
     volumes:
-      - "{{ docker_data }}/wireguard-server:/config"
-      - "/lib/modules:/lib/modules:ro"
-      - "/usr/src:/usr/src:ro"
+      - "{{ docker_data }}/wireguard-server:/etc/wireguard"
     cap_add:
       - NET_ADMIN
       - SYS_MODULE
@@ -31,9 +25,16 @@ services:
       - default
     sysctls:
       - net.ipv4.conf.all.src_valid_mark=1
+      - net.ipv4.ip_forward=1
+    ports:
+      - "51820:51820/udp"
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
-      traefik.udp.routers.wireguard.rule: "Host(`wireguard.{{ domain }}`)"
-      traefik.udp.routers.wireguard.service: "wireguard"
-      traefik.udp.services.wireguard.loadbalancer.server.port: "51820"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.wireguard.middlewares: "iframe-header@file"
+      traefik.http.routers.wireguard.tls: "true"
+      traefik.http.routers.wireguard.rule: "Host(`wireguard.{{ domain }}`)"
+      traefik.http.routers.wireguard.service: "wireguard"
+      traefik.http.services.wireguard.loadbalancer.server.port: "51821"

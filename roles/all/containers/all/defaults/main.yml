@@ -1,4 +1,7 @@
 exclude_dockers:
   - "duplicati"
-  - "sftp"
+  - "librespeed"
   - "nextcloud"
+  - "public-services"
+  - "scrutiny"
+  - "sftp"

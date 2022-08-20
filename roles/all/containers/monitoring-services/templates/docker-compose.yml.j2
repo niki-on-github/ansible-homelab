@@ -6,6 +6,7 @@ networks:
     name: docker-bridge
 
 services:
+
   grafana:
     image: grafana/grafana
     container_name: grafana
@@ -15,6 +16,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.grafana.middlewares: "iframe-header@file"
       traefik.http.routers.grafana.tls: "true"
       traefik.http.routers.grafana.rule: "Host(`grafana.{{ domain }}`)"
@@ -27,6 +30,7 @@ services:
     volumes:
       - "{{ docker_data }}/monitoring-services/grafana:/var/lib/grafana:rw"
 
+
   influxdb:
     image: influxdb:1.8
     container_name: influxdb
@@ -34,6 +38,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.influxdb.tls: "true"
       traefik.http.routers.influxdb.rule: "Host(`influxdb.{{ domain }}`)"
       traefik.http.routers.influxdb.service: "influxdb"
@@ -43,9 +49,53 @@ services:
     volumes:
       - "{{ docker_data }}/monitoring-services/influxdb:/var/lib/influxdb:rw"
     environment:
-      INFLUXDB_DB: "opnsense"
+      INFLUXDB_DB: "opnsense-telegraf"
       INFLUXDB_ADMIN_USER: "root"
       INFLUXDB_ADMIN_PASSWORD: "{{ webservices_password }}"
+
+
+  postgres:
+    container_name: postgres
+    image: postgres:10
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - "{{ docker_data }}/monitoring-services/postgres:/var/lib/postgresql/data:rw"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.postgres.tls: "true"
+      traefik.http.routers.postgres.rule: "Host(`postgres.{{ domain }}`)"
+      traefik.http.routers.postgres.service: "postgres"
+      traefik.http.services.postgres.loadbalancer.server.port: "5432"
+    environment:
+      POSTGRES_PASSWORD: "{{ webservices_password }}"
+      POSTGRES_USER: "root"
+      POSTGRES_DB: "db"
+
+
+  uptime_kuma:
+    container_name: uptime-kuma
+    image: louislam/uptime-kuma:1
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - "{{ docker_data }}/monitoring-services/uptime-kuma:/app/data"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.uptime.middlewares: "iframe-header@file"
+      traefik.http.routers.uptime.tls: "true"
+      traefik.http.routers.uptime.rule: "Host(`uptime.{{ domain }}`)"
+      traefik.http.routers.uptime.service: "uptime"
+      traefik.http.services.uptime.loadbalancer.server.port: "3001"
+
 
   telegraf:
     image: telegraf

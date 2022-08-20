@@ -1,0 +1,3 @@
+traefik_log_level: "INFO"
+ca_passphrase: "{{ webservices_password }}"
+ts_machine_name: "public"

@@ -16,3 +16,4 @@
     project_src: '{{ docker_recipes }}/watchtower'
     files:
     - docker-compose.yml
+    remove_orphans: true

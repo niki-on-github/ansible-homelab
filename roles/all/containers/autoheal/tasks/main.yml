@@ -1,0 +1,19 @@
+---
+- name: "Create autoheal directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/autoheal"
+
+- name: "Generate autoheal docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/autoheal/docker-compose.yml"
+
+- name: "Deploy autoheal"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/autoheal'
+    files:
+    - docker-compose.yml
+    remove_orphans: true

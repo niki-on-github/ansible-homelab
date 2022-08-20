@@ -39,7 +39,7 @@ rsync \
 rsync \
     -av \
     --delete \
-    --log-file="{{ docker_logs }}/$(date +"%Y-%m-%d_%H-%M-%S")-data-rsync.log" \
+    --log-file="{{ docker_logs }}/$(date +"%Y-%m-%d_%H-%M-%S")-restore-rsync.log" \
     {{ docker_restore }} {{ docker_backup }}
 
 
@@ -88,3 +88,13 @@ par2create -r5 -n1 {{ backup_home_archiv }}/${backup_archiv_name}${backup_archiv
 popd
 echo "prune old backup archives"
 find {{ backup_home_archiv }}/*${backup_archiv_type}* -mtime +30 -exec rm {} \;
+
+
+if [ -d {{ docker_share }}/syncthing ]; then
+    mkdir -p {{ backup_home_rsync }}/syncthing
+    rsync \
+        -av \
+        --delete \
+        --log-file="{{ docker_logs }}/$(date +"%Y-%m-%d_%H-%M-%S")-syncthing-rsync.log" \
+        {{ docker_share }}/syncthing/ {{ backup_home_rsync }}/syncthing
+fi

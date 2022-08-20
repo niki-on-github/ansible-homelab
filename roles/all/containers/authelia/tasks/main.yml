@@ -7,6 +7,16 @@
     - "{{ docker_recipes }}/authelia"
     - "{{ docker_data }}/authelia"
 
+- name: "Generate argon2 password hash"
+  shell:
+    cmd: "docker run --rm authelia/authelia:latest authelia hash-password '{{webservices_password}}' | cut -d ' ' -f 3"
+  register: authelia_password_hash
+  changed_when: false
+
+- name: "Create var argon2_webservices_password"
+  set_fact:
+    argon2_webservices_password: "{{ authelia_password_hash.stdout }}"
+
 - name: "Generate authelia config"
   template:
     src: "{{ item }}"
@@ -27,3 +37,4 @@
     project_src: '{{ docker_recipes }}/authelia'
     files:
     - docker-compose.yml
+    remove_orphans: true

@@ -1,0 +1,16 @@
+homeassistant: true
+permit_join: false
+
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://mosquitto.:1883
+
+serial:
+  port: {{ conbee_dev }}
+
+advanced:
+  network_key: GENERATE
+
+frontend:
+  port: 8081
+  host: 0.0.0.0

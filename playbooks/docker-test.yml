@@ -2,5 +2,5 @@
 - hosts: archlinux
   roles:
 
-    - role: all/containers/ftp
+    - role: all/containers/public-services
 

@@ -1,0 +1,39 @@
+# set yaml schema through modeline (vscode-yaml extension): traefik dynamic schema
+# yaml-language-server: $schema=https://json.schemastore.org/traefik-v2-file-provider.json
+---
+http:
+
+  middlewares:
+
+    auth:
+      forwardAuth:
+        address: "http://authelia:9091/api/verify?rd=https://auth.{{ ts_machine_name }}.{{ ts_domain }}"
+        trustForwardHeader: true
+        authResponseHeaders:
+        - "X-Forwarded-User"
+
+    https-redirect:
+      redirectScheme:
+        scheme: https
+
+    iframe-header:
+      headers:
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentSecurityPolicy: "frame-ancestors 'self' {{ts_domain}} *.{{ts_domain}} ;"
+
+  serversTransports:
+
+    ignore-self-signed:
+      insecureskipverify: true
+
+
+tls:
+  certificates:
+    - certFile: "/certs/{{ ts_machine_name }}.{{ ts_domain }}.crt"
+      keyFile: "/certs/{{ ts_machine_name }}.{{ ts_domain }}.key"
+  stores:
+    default:
+        defaultCertificate:
+            certFile: "/certs/{{ ts_machine_name }}.{{ ts_domain }}.crt"
+            keyFile: "/certs/{{ ts_machine_name }}.{{ ts_domain }}.key"
+

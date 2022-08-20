@@ -1,9 +1,22 @@
 ---
 - block:
 
+  - name: 'System update #1'
+    package:
+      name:
+      - archlinux-keyring
+      state: latest
+
+  - name: 'Uninstall conflicting Python Packages'
+    pip:
+      name: "{{ item }}"
+      state: absent
+    with_items:
+      - "paramiko"
+
   # TODO: we should reboot if we update the kernel
   # TODO: update often cause problems e.g. VM deployment. But we need lates packages to be able to install other requirred packages with other rules.
-  - name: 'System update'
+  - name: 'System update #2'
     pacman:
       update_cache: yes
       upgrade: yes
@@ -14,6 +27,7 @@
       name:
         - borg
         - cpupower
+        - ethtool
         - htop
         - jq
         - kexec-tools
@@ -22,6 +36,7 @@
         - openssl
         - parted
         - python-pip
+        - python-paramiko
         - rsync
         - sysstat
         - usbutils

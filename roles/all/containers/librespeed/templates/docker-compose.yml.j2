@@ -16,6 +16,8 @@ services:
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
       traefik.http.routers.librespeed.middlewares: "iframe-header@file"
       traefik.http.routers.librespeed.tls: "true"
       traefik.http.routers.librespeed.rule: "Host(`librespeed.{{ domain }}`)"
