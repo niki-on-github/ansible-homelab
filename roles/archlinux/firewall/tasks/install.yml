@@ -13,7 +13,7 @@
   #   kewlfft.aur.aur:
   #     name:
   #       - ufw-docker
-  #   become_user: aur_builder
+  #   become_user: "{{ username }}"
 
   # - name: 'Initialize ufw-docker'
   #   shell: |

@@ -15,7 +15,7 @@
       name:
         - mergerfs
         - snapraid
-    become_user: aur_builder
+    become_user: "{{ username }}"
 
   - name: "Verify that specified devices exist"
     include_tasks: dev_exists.yml

@@ -8,11 +8,11 @@ for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" |
     cd "$recipe_path"
     service_name=$(basename "$recipe_path")
     log_name="$(date +"%Y-%m-%d_%H-%M-%S")-update.json"
-    docker-compose pull 2>&1
-    docker-compose build --no-cache --pull 2>&1
-    docker-compose up -d --remove-orphans 2>&1
+    docker compose pull 2>&1
+    docker compose build --no-cache --pull 2>&1
+    docker compose up -d --remove-orphans 2>&1
     mkdir -p $DOCKER_COMPOSE_RESTORE/$service_name
-    docker inspect $(docker-compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
+    docker inspect $(docker compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
 done
 
 unset IFS

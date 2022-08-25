@@ -1,0 +1,49 @@
+version: '3'
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  authelia:
+    image: authelia/authelia
+    container_name: authelia
+    restart: unless-stopped
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.authelia.middlewares: "iframe-header@file"
+      traefik.http.routers.authelia.tls: "true"
+      traefik.http.routers.authelia.rule: "Host(`auth.{{ domain }}`)"
+      traefik.http.routers.authelia.service: "authelia"
+      traefik.http.services.authelia.loadbalancer.server.port: "9091"
+    expose:
+      - 9091
+    environment:
+      TZ: "{{ timezone }}"
+      AUTHELIA_IDENTITY_PROVIDERS_OIDC_ISSUER_PRIVATE_KEY_FILE: "/config/identity_providers_oidc_issuer_private_key.pem"
+    env_file:
+      - .env
+    networks:
+      - default
+    volumes:
+      - "{{ docker_data }}/authelia:/config"
+
+  whoami:
+    image: containous/whoami
+    container_name: whoami
+    restart: unless-stopped
+    networks:
+      - default
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.whoami.middlewares: "iframe-header@file,auth@file"
+      traefik.http.routers.whoami.tls: "true"
+      traefik.http.routers.whoami.rule: "Host(`whoami.{{ domain }}`)"
+      traefik.http.routers.whoami.service: "whoami"
+      traefik.http.services.whoami.loadbalancer.server.port: "80"

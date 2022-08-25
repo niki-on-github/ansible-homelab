@@ -1,0 +1,32 @@
+---
+- name: "Create deluge directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/deluge"
+    - "{{ docker_data }}/deluge"
+    - "{{ docker_data }}/deluge/openvpn"
+    - "{{ docker_share }}/deluge"
+
+- name: "Generate deluge docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/deluge/docker-compose.yml"
+
+- name: "Copy vpn config"
+  copy:
+    src: "{{ item }}"
+    dest: "{{ docker_data }}/deluge/openvpn"
+    owner: "{{ username }}"
+    group: "docker"
+    mode: 0755
+  with_fileglob:
+    - "{{ role_path }}/../../../files/vpn-config/deluge/*.ovpn"
+
+- name: "Deploy deluge"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/deluge'
+    files:
+    - docker-compose.yml
+    remove_orphans: true

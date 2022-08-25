@@ -1,0 +1,170 @@
+---
+- block:
+  # root
+
+  - name: "Print distribution information"
+    debug:
+      var: ansible_facts['distribution']
+
+  - name: "Set amd64 arch"
+    set_fact:
+      repo_arch: amd64
+    when: ansible_architecture == "x86_64"
+
+  - name: "Set arm64 arch"
+    set_fact:
+      repo_arch: "{{ ansible_architecture }}"
+    when: (ansible_architecture == "arm64") or (ansible_architecture == "aarch64")
+
+  - name: "Include OS-specific variables"
+    include_vars: "{{ ansible_facts['distribution'] }}.yml"
+
+  - block:
+    # Ubuntu
+
+    - name: "Install Docker dependencies"
+      package:
+        update_cache: yes
+        state: present
+        name: "{{ docker_dependencies }}"
+
+    - name: "Add Docker GPG apt Key"
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: "Add Docker Repository"
+      apt_repository:
+        repo: "deb [arch={{ repo_arch }}] https://download.docker.com/linux/{{ ansible_facts['distribution'] | lower }} {{ ansible_lsb['codename'] }} stable"
+        state: present
+
+    - name: "Install Docker"
+      apt:
+        update_cache: no
+        name: "{{ docker_packages }}"
+        state: present
+
+    when: ansible_facts['distribution'] == 'Ubuntu'
+
+  - block:
+    # Arch Linux
+
+    - name: 'Update archlinux-keyring'
+      pacman:
+        name: 'archlinux-keyring'
+        state: latest
+        update_cache: yes
+
+    - name: 'Install Docker dependencies'
+      package:
+        name: "{{ docker_deps }}"
+        state: latest
+
+    - name: 'Install Docker'
+      package:
+        name: "{{ docker_packages }}"
+        state: latest
+
+    when: ansible_facts['distribution'] == 'Archlinux'
+
+  - name: 'Install Docker Python Packet for root'
+    pip:
+      name: "{{ item }}"
+    with_items:
+      - "docker-compose"
+
+  - name: "Ensure group docker exists"
+    group:
+      name: docker
+      state: present
+
+  - name: 'Add users to docker group'
+    user:
+      name: '{{ username }}'
+      groups: 'docker'
+      append: 'yes'
+
+  - name: 'Enable docker systemd service'
+    ansible.builtin.systemd:
+      name: 'docker'
+      state: 'started'
+      enabled: 'yes'
+
+  - name: "reset ssh connection to allow user changes to affect ansible user"
+    ansible.builtin.meta:
+      reset_connection
+
+  - name: "Check if {{ docker_data }} already exists"
+    stat:
+      path: "{{ docker_data }}"
+    register: docker_data_before
+
+  - name: "Check if {{ docker_backup }} exists"
+    stat:
+      path: "{{ docker_backup }}"
+    register: docker_backup_dir
+
+  - name: 'Create docker home directory'
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: "{{ username }}"
+      group: "docker"
+      recurse: no
+    with_items:
+       -  "{{ docker_home }}"
+
+  # We use this network as default network bridge since the default bridge created by docker has limitations!
+  - name: 'Create default docker-bridge network'
+    docker_network:
+      name: docker-bridge
+
+  - name: 'Create default isolated network'
+    docker_network:
+      name: isolated
+      internal: yes
+
+  - name: "Restore {{ docker_home }} from {{ docker_backup }}"
+    synchronize:
+      src: "{{ docker_backup }}/"
+      dest: "{{ docker_home }}"
+      delete: true
+      recursive: yes
+    delegate_to: "{{ inventory_hostname }}"
+    when: not docker_data_before.stat.exists and not develop and docker_backup_dir.stat.exists
+
+  - name: 'Create docker directories'
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: "{{ username }}"
+      group: "docker"
+      recurse: no
+    with_items:
+       - "{{ docker_home }}"
+       - "{{ docker_recipes }}"
+       - "{{ docker_data }}"
+       - "{{ docker_logs }}"
+       - "{{ docker_share }}"
+       - "{{ docker_temp }}"
+       - "{{ docker_restore }}"
+
+  - name: 'Restart docker systemd service to apply changes'
+    ansible.builtin.systemd:
+      name: 'docker'
+      state: 'restarted'
+      daemon_reload: yes
+      enabled: 'yes'
+
+  become: yes
+
+
+- block:
+  # user
+
+  - name: 'Install Docker Python Packet for user'
+    pip:
+      name: "{{ item }}"
+    with_items:
+      - "docker"
+      - "docker-compose"

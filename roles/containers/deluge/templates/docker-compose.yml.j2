@@ -1,0 +1,47 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  deluge:
+    image: binhex/arch-delugevpn
+    container_name: deluge
+    restart: unless-stopped
+    environment:
+      VPN_ENABLED: "yes"
+      VPN_PROV: "{{ vpn_provider }}"
+      VPN_CLIENT: "openvpn"
+      ENABLE_PRIVOXY: "yes"
+      LAN_NETWORK: "{{ network_address }}"
+      NAME_SERVERS: "{{ vpn_nameservers }}"
+      DELUGE_DAEMON_LOG_LEVEL: "info"
+      DELUGE_WEB_LOG_LEVEL: "info"
+      DEBUG: "false"
+      UMASK: "000"
+      PUID: "{{ uid }}"
+      PGID: "{{ gid }}"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.deluge.middlewares: "iframe-header@file,auth@file"
+      traefik.http.routers.deluge.tls: "true"
+      traefik.http.routers.deluge.rule: "Host(`deluge.{{ domain }}`)"
+      traefik.http.routers.deluge.service: "deluge"
+      traefik.http.services.deluge.loadbalancer.server.port: "8112"
+      traefik.http.routers.privoxy.tls: "true"
+      traefik.http.routers.privoxy.rule: "Host(`privoxy.{{ domain }}`)"
+      traefik.http.routers.privoxy.service: "deluge"
+      traefik.http.services.privoxy.loadbalancer.server.port: "8118"
+    volumes:
+      - "{{ docker_share }}/deluge:/data"
+      - "{{ docker_data }}/deluge:/config"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - default
+    cap_add:
+      - NET_ADMIN

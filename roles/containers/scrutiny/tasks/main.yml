@@ -1,0 +1,43 @@
+
+---
+- name: "Create scrutiny directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/scrutiny"
+    - "{{ docker_data }}/scrutiny"
+
+- name: "Get hdd/ssd list"
+  shell: |
+    lsblk -ido KNAME | tail -n +2
+  register: device_list
+
+- name: "Set device list variable"
+  set_fact:
+    device_list: "{{ ['/dev/'] | product(device_list.stdout_lines) | map('join') | list }}"
+
+- name: "Show device list"
+  debug:
+    msg: "{{ device_list }}"
+
+- name: "Generate scrutiny docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/scrutiny/docker-compose.yml"
+
+- name: "Deploy scrutiny"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/scrutiny'
+    files:
+    - docker-compose.yml
+    remove_orphans: true
+
+- name: "Wait for scrutiny startup"
+  pause:
+    seconds: 20
+
+- name: "Update device list inside docker"
+  shell:
+    cmd: docker compose exec scrutiny scrutiny-collector-metrics run
+    chdir: "{{ docker_recipes }}/scrutiny"

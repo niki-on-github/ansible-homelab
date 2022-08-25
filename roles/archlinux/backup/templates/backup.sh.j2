@@ -4,7 +4,7 @@
 if [ -d {{ docker_recipes }}/paperless ]; then
     echo "export paperless documents"
     pushd "{{ docker_recipes }}/paperless"
-    docker-compose exec -T webserver document_exporter -d ../export
+    docker compose exec -T paperless document_exporter -d ../export
     popd
 fi
 

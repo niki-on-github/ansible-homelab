@@ -1,0 +1,38 @@
+---
+- name: "Create filebrowser directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/filebrowser"
+    - "{{ docker_data }}/filebrowser"
+    - "{{ docker_data }}/filebrowser/database"
+    - "{{ docker_share }}"
+
+- name: "Generate filebrowser docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/filebrowser/docker-compose.yml"
+
+- name: "Generate filebrowser config"
+  template:
+    src: "{{ item }}"
+    dest: "{{ docker_data }}/filebrowser/{{ item | basename | regex_replace('\\.j2$', '') }}"
+  with_items:
+    - "settings.json.j2"
+
+# - name: "Create empty database"
+#   copy:
+#     src: "files/filebrowser.db"
+#     dest: "{{ docker_data }}/filebrowser/filebrowser.db"
+#     owner: "{{ uid }}"
+#     group: "{{ gid }}"
+#     mode: 0755
+#     force: off
+
+- name: "Deploy filebrowser"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/filebrowser'
+    files:
+    - docker-compose.yml
+    remove_orphans: true

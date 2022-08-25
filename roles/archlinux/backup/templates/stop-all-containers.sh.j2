@@ -12,7 +12,7 @@ else
 fi
 
 previous_states_file="/tmp/docker.states"
-docker-compose ls > $previous_states_file
+docker compose ls > $previous_states_file
 
 IFS=$'\n'
 for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" | grep -iv "$FILTER" | xargs -I {} dirname "{}") ; do
@@ -20,8 +20,8 @@ for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" |
     service_name=$(basename "$recipe_path")
     log_name="$(date +"%Y-%m-%d_%H-%M-%S")-stop.json"
     mkdir -p $DOCKER_COMPOSE_RESTORE/$service_name
-    docker inspect $(docker-compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
-    docker-compose down 2>&1 &
+    docker inspect $(docker compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
+    docker compose down 2>&1 &
 done
 unset IFS
 

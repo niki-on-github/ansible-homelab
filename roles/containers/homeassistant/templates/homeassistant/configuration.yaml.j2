@@ -1,0 +1,32 @@
+
+# Configure a default setup of Home Assistant (frontend, api, etc)
+default_config:
+
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+  - 172.16.0.0/12
+  ip_ban_enabled: true
+  login_attempts_threshold: 10
+
+# Text to speech
+tts:
+  - platform: google_translate
+
+mqtt:
+  client_id: HomeAssistant
+
+group: !include groups.yaml
+automation: !include automations.yaml
+script: !include scripts.yaml
+scene: !include scenes.yaml
+
+homeassistant:
+  auth_providers:
+    - type: homeassistant
+    # we use authelia (bug only use one trusted_proxies address to get this to work)
+    - type: trusted_networks
+      trusted_networks:
+        - 10.0.0.0/8
+        - 192.168.0.0/16
+      allow_bypass_login: true

@@ -1,0 +1,89 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  homeassistant:
+    image: "homeassistant/home-assistant:stable"
+    container_name: homeassistant
+    restart: unless-stopped
+    environment:
+      TZ: "{{ timezone }}"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.homeassistant.middlewares: "iframe-header@file,auth@file"
+      traefik.http.routers.homeassistant.tls: "true"
+      traefik.http.routers.homeassistant.rule: "Host(`homeassistant.{{ domain }}`)"
+      traefik.http.routers.homeassistant.service: "homeassistant"
+      traefik.http.services.homeassistant.loadbalancer.server.port: "8123"
+    volumes:
+      - "{{ docker_data }}/homeassistant/config:/config"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - default
+
+  zigbee2mqtt:
+    container_name: zigbee2mqtt
+    image: koenkk/zigbee2mqtt
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - "{{ docker_data }}/homeassistant/zigbee:/app/data"
+      - "/run/udev:/run/udev:ro"
+    environment:
+      TZ: "{{ timezone }}"
+{% if conbee_dev_info.stat.exists %}
+    devices:
+      - {{ conbee_dev }}
+{% endif %}
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.zigbee.middlewares: "iframe-header@file,auth@file"
+      traefik.http.routers.zigbee.tls: "true"
+      traefik.http.routers.zigbee.rule: "Host(`zigbee.{{ domain }}`)"
+      traefik.http.routers.zigbee.service: "zigbee"
+      traefik.http.services.zigbee.loadbalancer.server.port: "8081"
+
+  mosquitto:
+    container_name: mosquitto
+    image: eclipse-mosquitto
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - "{{ docker_data }}/homeassistant/mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf"
+      - "{{ docker_data }}/homeassistant/mqtt/data:/mosquitto/data"
+      - "{{ docker_data }}/homeassistant/mqtt/log:/mosquitto/log"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+
+  node_red:
+    container_name: node-red
+    image: nodered/node-red:latest
+    restart: unless-stopped
+    networks:
+      - default
+    volumes:
+      - "{{ docker_data }}/homeassistant/node-red:/data"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "homelab"
+      traefik.http.routers.nodered.middlewares: "iframe-header@file"
+      traefik.http.routers.nodered.tls: "true"
+      traefik.http.routers.nodered.rule: "Host(`nodered.{{ domain }}`)"
+      traefik.http.routers.nodered.service: "nodered"
+      traefik.http.services.nodered.loadbalancer.server.port: "1880"
+    environment:
+      TZ: "{{ timezone }}"

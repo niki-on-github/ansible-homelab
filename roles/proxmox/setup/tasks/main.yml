@@ -1,0 +1,22 @@
+---
+
+- name: "Print distribution information"
+  debug:
+    var: ansible_facts['distribution']
+
+- name: "Throw error for incorrect distribution"
+  fail:
+    msg: "Invalid Distribution"
+  when: ansible_facts['distribution'] != "Debian"
+
+- name: removes subscription nag box
+  include_tasks: remove-nag.yml
+  when: remove_nag
+
+- name: remove enterprise repo
+  include_tasks: remove-enterprise-repo.yml
+  when: remove_enterprise_repo
+
+- name: add no subcription repo
+  include_tasks: add-no-subscription-repo.yml
+  when: add_no_subscription_repo

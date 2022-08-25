@@ -1,0 +1,6 @@
+---
+- hosts: proxmox
+  roles:
+
+    - role: proxmox/setup
+

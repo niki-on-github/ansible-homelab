@@ -1,0 +1,59 @@
+---
+- name: "Create monitoring-services directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/monitoring-services"
+    - "{{ docker_data }}/monitoring-services"
+    - "{{ docker_data }}/monitoring-services/influxdb"
+    - "{{ docker_data }}/monitoring-services/postgres"
+    - "{{ docker_data }}/monitoring-services/uptime-kuma"
+    - "{{ docker_data }}/monitoring-services/elasticsearch"
+    - "{{ docker_data }}/monitoring-services/kibana"
+    - "{{ docker_data }}/monitoring-services/logstash"
+    - "{{ docker_data }}/monitoring-services/telegraf"
+
+- name: "Create grafana directories with user id 472 and groop id 0"
+  file:
+    path: "{{ docker_data }}/monitoring-services/grafana"
+    owner: "472"
+    group: "0"
+    state: directory
+  become: True
+
+- name: "Get docker gid"
+  getent:
+    database: group
+    key: docker
+
+- name: "Store docker gid in docker_gid"
+  set_fact:
+    docker_gid: "{{ getent_group.docker[1] }}"
+
+- name: "Generate telegraf config"
+  template:
+    src: "telegraf/telegraf.conf.j2"
+    dest: "{{ docker_data }}/monitoring-services/telegraf/telegraf.conf"
+
+- name: "Generate logstash Dockerfile"
+  copy:
+    src: "files/logstash"
+    dest: "{{ docker_recipes }}/monitoring-services"
+
+- name: "Generate monitoring-services docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/monitoring-services/docker-compose.yml"
+
+- name: "Generate monitoring-services docker-compose environment variables file"
+  template:
+    src: env.j2
+    dest: "{{ docker_recipes }}/monitoring-services/.env"
+
+- name: "Deploy monitoring-services"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/monitoring-services'
+    files:
+    - docker-compose.yml
+    remove_orphans: true

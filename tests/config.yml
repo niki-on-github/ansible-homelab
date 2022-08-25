@@ -1,0 +1,17 @@
+---
+configs:
+  use: 'ubuntu'
+  archlinux:
+    name: 'homelab-test-arch'
+    box: "archlinux/archlinux"
+    group: "archlinux"
+    cpus: 8
+    memory: 8192
+    disksize: 64
+  ubuntu:
+    name: 'homelab-test-ubuntu'
+    box: "generic/ubuntu2204"
+    group: "ubuntu"
+    cpus: 8
+    memory: 8192
+    disksize: 64

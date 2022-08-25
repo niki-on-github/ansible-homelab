@@ -26,6 +26,8 @@ ansible-vault edit ./inventory/group_vars/$GROUP_NAME/$HOSTNAME/secret.yml
 
 ## Deploy
 
+### supermicro server
+
 ```bash
 ansible-playbook -i ./inventory/testserver_01 ./playbooks/filesystem.yml -K --ask-vault-password
 ansible-playbook -i ./inventory/testserver_01 ./playbooks/opnsense-install.yml -K --ask-vault-password

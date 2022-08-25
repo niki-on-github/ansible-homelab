@@ -28,9 +28,9 @@ for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" |
     fi
 
     if $start_container ; then
-        docker-compose up -d 2>&1
+        docker compose up -d 2>&1
         mkdir -p $DOCKER_COMPOSE_RESTORE/$service_name
-        docker inspect $(docker-compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
+        docker inspect $(docker compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
     fi
 done
 

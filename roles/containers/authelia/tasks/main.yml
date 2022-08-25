@@ -1,0 +1,62 @@
+---
+- name: "Verify that required role variables are defined"
+  assert:
+    that:
+      - "{{ item }} is defined"
+      - "{{ item }} | length > 0"
+      - "{{ item }} != None"
+    fail_msg: "{{ item }} needs to be set!"
+    success_msg: "Required variable {{ item }} is defined"
+  with_items:
+    - authelia_oidc_grafana_secret
+
+- name: "Create authelia directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/authelia"
+    - "{{ docker_data }}/authelia"
+
+- name: "Generate argon2 password hash"
+  shell:
+    cmd: "docker run --rm authelia/authelia:latest authelia hash-password '{{webservices_password}}' | cut -d ' ' -f 3"
+  register: authelia_password_hash
+  changed_when: false
+
+- name: "Create var argon2_webservices_password"
+  set_fact:
+    argon2_webservices_password: "{{ authelia_password_hash.stdout }}"
+
+- name: "Generate authelia config"
+  template:
+    src: "{{ item }}"
+    dest: "{{ docker_data }}/authelia/{{ item | basename | regex_replace('\\.j2$', '') }}"
+    force: yes
+  become: yes
+  with_items:
+    - "configuration.yml.j2"
+    - "users_database.yml.j2"
+
+- name: "Generate authelia docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/authelia/docker-compose.yml"
+
+- name: "Generate AUTHELIA_IDENTITY_PROVIDERS_OIDC_ISSUER_PRIVATE_KEY_FILE (4096 bits, RSA)"
+  community.crypto.openssl_privatekey:
+    path: "{{ docker_data }}/authelia/identity_providers_oidc_issuer_private_key.pem"
+  become: true
+
+- name: "Generate auth docker-compose environment variables file"
+  template:
+    src: env.j2
+    dest: "{{ docker_recipes }}/authelia/.env"
+    force: no
+
+- name: "Deploy authelia"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/authelia'
+    files:
+    - docker-compose.yml
+    remove_orphans: true
