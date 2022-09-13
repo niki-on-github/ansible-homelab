@@ -1,0 +1,85 @@
+---
+- block:
+  # root
+
+  - name: "Print distribution information"
+    debug:
+      var: ansible_facts['distribution']
+
+  - name: "Include OS-specific variables"
+    include_vars: "{{ ansible_facts['distribution'] }}.yml"
+
+  - name: 'Create backup directories'
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: "{{ uid }}"
+      group: "{{ gid }}"
+      recurse: no
+    with_items:
+       - "{{ backup_tools_dir }}"
+       - "{{ backup_tools_dir }}/docker"
+       - "{{ backup_home }}"
+       - "{{ backup_home_borg }}"
+       - "{{ backup_home_rsync }}"
+       - "{{ backup_home_archiv }}"
+       - "{{ docker_backup }}"
+       - "{{ docker_logs }}"
+
+  - name: 'Update archlinux-keyring'
+    pacman:
+      name: 'archlinux-keyring'
+      state: latest
+      update_cache: yes
+    when: ansible_facts['distribution'] == 'Archlinux'
+
+  - name: 'Install backup packages'
+    package:
+      update_cache: yes
+      name: "{{ backup_packages }}"
+      state: latest
+
+  - name: "Create backup service config"
+    template:
+      src: backup.service.j2
+      dest: "/etc/systemd/system/backup.service"
+      owner: root
+      group: root
+      mode: 0640
+
+  - name: "Create backup timer config"
+    template:
+      src: backup.timer.j2
+      dest: "/etc/systemd/system/backup.timer"
+      owner: root
+      group: root
+      mode: 0640
+
+  - name: "Generate docker helper scripts"
+    template:
+      src: "{{ item }}"
+      dest: "{{ backup_tools_dir }}/docker/{{ item | basename | regex_replace('\\.j2$', '') }}"
+      owner: "{{ username }}"
+      group: "docker"
+      mode: 0755
+    with_items:
+      - "templates/stop-all-containers.sh.j2"
+      - "templates/start-all-containers.sh.j2"
+      - "templates/update-all-containers.sh.j2"
+
+  - name: "Create backup script {{ backup_script }}"
+    template:
+      src: backup.sh.j2
+      dest: "{{ backup_script }}"
+      owner: root
+      group: root
+      mode: 0750
+
+  - name: "Enable backup timer"
+    systemd:
+      name: "backup.timer"
+      state: started
+      enabled: true
+      daemon_reload: true
+
+  become: yes

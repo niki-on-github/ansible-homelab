@@ -59,10 +59,22 @@
     chdir: "{{ vagrant_recipes }}/opnsense/ansible"
   become: yes
 
-- name: "Deploy OPNsense (this can take some time)"
-  shell:
-    cmd: vagrant up
+- name: "Deploy OPNsense #1"
+  command: vagrant destroy -f
+  args:
     chdir: "{{ vagrant_recipes }}/opnsense"
+  environment:
+    PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
+  when: "not provisioning_check.stat.exists"
+  become: yes
+  ignore_errors: true
+
+- name: "Deploy OPNsense #2 (this can take some time)"
+  command: vagrant up
+  args:
+    chdir: "{{ vagrant_recipes }}/opnsense"
+  environment:
+    PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
   register: opnsense_deploy
   when: "not provisioning_check.stat.exists"
   become: yes
@@ -113,7 +125,7 @@
 - name: "Download vagrant SSH private key for OPNsense"
   fetch:
     src: "{{ vagrant_recipes }}/opnsense/.vagrant/machines/default/libvirt/private_key"
-    dest: "{{ role_path }}/../../../files/opnsense/private_key"
+    dest: "{{ playbook_dir }}/../files/opnsense/private_key"
     flat: yes
   become: yes
 

@@ -1,0 +1,31 @@
+---
+- name: "Create certs directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ username }}"
+    recurse: no
+  become: true
+  with_items:
+    - "{{ certs_path }}"
+
+- name: "CA Certificate"
+  include_tasks: ca.yml
+
+- name: "Domain Certificate"
+  include_tasks: domain.yml
+
+- name: "Create CA folder on ansible host"
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: 0755
+  delegate_to: localhost
+  with_items:
+    - "{{ playbook_dir }}/../files/CA"
+
+- name: "Download self signed CA certificate to ansible host"
+  fetch:
+    src: "{{ certs_path }}/self-signed-ca-cert.crt"
+    dest: "{{ playbook_dir }}/../files/CA/rootCA.pem"
+    flat: yes

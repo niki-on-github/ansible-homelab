@@ -41,9 +41,33 @@
         - python-yaml
         - qemu-full
         - swtpm
-        - vagrant
         - virt-install
       state: latest
+
+  - name: "Get stat for /usr/bin/nix-env"
+    stat:
+      path: /usr/bin/nix-env
+    register: nix_env_command
+
+  - name: 'Install vagrant via arch repositories'
+    package:
+      name:
+        - vagrant
+      state: latest
+    when: not nix_env_command.stat.exists
+
+  - name: "Install vagrant via nix repositories"
+    shell:
+      cmd: "nix-env -iA nixpkgs.vagrant"
+    when: nix_env_command.stat.exists
+
+  - name: 'Install KVM GUI'
+    package:
+      name:
+        - virt-manager
+        - virt-viewer
+      state: latest
+    when: install_kvm_gui
 
   - name: 'Add users to kvm groups'
     user:
@@ -100,21 +124,20 @@
       recurse: no
     with_items:
        -  "{{ vagrant_recipes }}"
+    when: vagrant_recipes is defined
 
   - name: "Fetch Vagrant Plugin List for root"
     command: vagrant plugin list
+    environment:
+      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
     register: vagrant_plugin_list
     changed_when: "'libvirt' not in vagrant_plugin_list.stdout"
 
   - name: "Install vagrant-libvirt plugin for root"
-    ansible.builtin.shell:
-      cmd: vagrant plugin install vagrant-libvirt
+    command: vagrant plugin install vagrant-libvirt
+    environment:
+      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
     when: '"libvirt" not in vagrant_plugin_list.stdout'
-
-  - name: "Install vagrant-mutate plugin for root"
-    ansible.builtin.shell:
-      cmd: vagrant plugin install vagrant-mutate
-    when: '"mutate" not in vagrant_plugin_list.stdout'
 
   - name: 'Install KVM Python Packet for root'
     pip:
@@ -131,18 +154,16 @@
 
   - name: "Fetch Vagrant Plugin List for user"
     command: vagrant plugin list
+    environment:
+      PATH: '/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
     register: vagrant_plugin_list
     changed_when: "'libvirt' not in vagrant_plugin_list.stdout"
 
   - name: "Install vagrant-libvirt plugin for user"
-    ansible.builtin.shell:
-      cmd: vagrant plugin install vagrant-libvirt
+    command: vagrant plugin install vagrant-libvirt
+    environment:
+      PATH: '/home/{{ username }}/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
     when: '"libvirt" not in vagrant_plugin_list.stdout'
-
-  - name: "Install vagrant-mutate plugin for user"
-    ansible.builtin.shell:
-      cmd: vagrant plugin install vagrant-mutate
-    when: '"mutate" not in vagrant_plugin_list.stdout'
 
   - name: 'Install KVM Python Packet for user'
     pip:

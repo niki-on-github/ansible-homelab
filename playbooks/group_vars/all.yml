@@ -12,4 +12,12 @@ docker_temp: '{{ docker_home }}/temp'
 docker_share: '{{ docker_home }}/share'
 docker_backup: "{{ backup_home_rsync }}/docker"
 vagrant_recipes: '/opt/vagrant/recipes'
-develop: False
+kubernetes_home: "/opt/kubernetes"
+kubernetes_recipes: "/opt/kubernetes/recipes"
+flux_repo_ip: "10.0.1.10"
+flux_repo_ssh_hostname: "git.server01.lan"
+flux_repo_ssh_url: "ssh://git@{{ flux_repo_ssh_hostname }}:222/r/k3s-infra-testing.git"
+flux_repo_private_key: "/home/arch/.ssh/arch-testserver"
+traefik_constraints_local_services: "homelab"
+certs_path: "/opt/certs"
+develop: false

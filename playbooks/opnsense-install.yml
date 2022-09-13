@@ -1,12 +1,8 @@
 ---
 - hosts: archlinux
   roles:
-
-    # system
-    - role: archlinux/system
+    - role: archlinux/precondition
     - role: linux/docker
     - role: archlinux/kvm
     - role: archlinux/network/kvm-bridge
-
-    # VMs
     - role: vms/opnsense-install

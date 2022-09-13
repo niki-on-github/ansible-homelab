@@ -2,6 +2,9 @@
 - hosts: archlinux, ubuntu
   roles:
     - role: linux/docker
-    - role: containers/traefik
-    - role: containers/all
+    - role: linux/backup
+    - role: linux/certificate
+    - role: containers/infrastructure/all
+    - role: containers/services/all
+    - role: containers/apps/all
 

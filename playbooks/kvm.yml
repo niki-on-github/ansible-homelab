@@ -1,0 +1,6 @@
+---
+- hosts: archlinux
+  roles:
+    - role: archlinux/precondition
+    - role: archlinux/kvm
+

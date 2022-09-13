@@ -1,0 +1,27 @@
+---
+- name: "Generate domain private key"
+  community.crypto.openssl_privatekey:
+    path: "{{ certs_path }}/{{ domain }}.key"
+
+- name: "Generate domain certificate signing request"
+  community.crypto.openssl_csr:
+    path: "{{ certs_path }}/{{ domain }}.csr"
+    privatekey_path: "{{ certs_path }}/{{ domain }}.key"
+    country_name: "DE"
+    organization_name: "{{ domain_organization_name }}"
+    email_address: "root@{{ domain }}"
+    common_name: "{{ domain }}"
+    subject_alt_name: 'DNS:{{ domain }},DNS:*.{{ domain }}'
+    # force: true # if you change values use force to override existing sign request!
+
+- name: "Generate an domain server certificate signed with your own CA certificate"
+  community.crypto.x509_certificate:
+    path: "{{ certs_path }}/{{ domain }}.crt"
+    csr_path: "{{ certs_path }}/{{ domain }}.csr"
+    ownca_path: "{{ certs_path }}/self-signed-ca-cert.crt"
+    ownca_privatekey_path: "{{ certs_path }}/ca.key"
+    ownca_privatekey_passphrase: "{{ ca_passphrase }}"
+    ownca_not_after: "+1825d"
+    ownca_not_before: "-1d"
+    provider: ownca
+    force: true

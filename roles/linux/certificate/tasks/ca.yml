@@ -1,0 +1,75 @@
+- name: "Generate CA private key"
+  community.crypto.openssl_privatekey:
+    path: "{{ certs_path }}/ca.key"
+    passphrase: "{{ ca_passphrase }}"
+    cipher: "auto"
+
+- name: "Generate an CA certificate signing request"
+  community.crypto.openssl_csr:
+    path: "{{ certs_path }}/ca.csr"
+    privatekey_path: "{{ certs_path }}/ca.key"
+    privatekey_passphrase: "{{ ca_passphrase }}"
+    # constraints and usage required by CA
+    basic_constraints_critical: true
+    basic_constraints:
+      - CA:TRUE
+      - pathlen:0
+    key_usage:
+      - digitalSignature
+      - cRLSign
+      - keyCertSign
+    country_name: "DE"
+    organization_name: "{{ ca_organization_name }}"
+    email_address: "root@{{ domain }}"
+    common_name: "ca.{{ domain }}"
+
+- name: "Generate a self signed CA certificate"
+  community.crypto.x509_certificate:
+    path: "{{ certs_path }}/self-signed-ca-cert.crt"
+    privatekey_path: "{{ certs_path }}/ca.key"
+    privatekey_passphrase: "{{ ca_passphrase }}"
+    csr_path: "{{ certs_path }}/ca.csr"
+    entrust_not_after: "+3650d"
+    provider: selfsigned
+
+- name: "Show CA cert"
+  community.crypto.x509_certificate_info:
+    path: "{{ certs_path }}/self-signed-ca-cert.crt"
+  register: ca_cert_result
+- debug:
+    msg: >
+      subject: {{ca_cert_result.subject}}
+      issuer: {{ca_cert_result.issuer}}
+      subject_alt_name: {{ca_cert_result.subject_alt_name}}
+
+- block:
+  # Arch Linux
+
+  - name: 'Update archlinux-keyring'
+    pacman:
+      name: 'archlinux-keyring'
+      state: latest
+      update_cache: yes
+
+  - name: 'Install certificates dependencies'
+    package:
+      name: "ca-certificates-utils"
+      state: latest
+
+  when: ansible_facts['distribution'] == 'Archlinux'
+  become: true
+
+- name: "Copy CA cert to /etc/ca-certificates/trust-source/anchors"
+  copy:
+    src: "{{ certs_path }}/self-signed-ca-cert.crt"
+    dest: /etc/ca-certificates/trust-source/anchors/self-signed-ca-cert.crt
+    owner: root
+    group: root
+    remote_src: true
+  become: true
+
+- name: "Add ca to /etc/ssl/certs/ca-certificates.crt"
+  command:
+    cmd: "update-ca-trust"
+  become: true
+

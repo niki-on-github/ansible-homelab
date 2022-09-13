@@ -1,8 +1,0 @@
----
-- hosts: archlinux
-  roles:
-
-    - role: archlinux/system
-    # TODO: this block a lot of our trafic
-    # - role: archlinux/firewall
-

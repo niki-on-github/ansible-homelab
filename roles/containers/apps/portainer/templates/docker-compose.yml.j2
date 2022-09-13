@@ -1,0 +1,29 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  portainer:
+    image: portainer/portainer-ce
+    container_name: portainer
+    restart: unless-stopped
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.portainer.middlewares: "iframe-header@file"
+      traefik.http.routers.portainer.tls: "true"
+      traefik.http.routers.portainer.rule: "Host(`portainer.{{ domain }}`)"
+      traefik.http.routers.portainer.service: "portainer"
+      traefik.http.services.portainer.loadbalancer.server.port: "9000"
+    networks:
+      - default
+    volumes:
+      - "/etc/localtime:/etc/localtime:ro"
+      - "/etc/timezone:/etc/timezone:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "{{ docker_data }}/portainer:/data"

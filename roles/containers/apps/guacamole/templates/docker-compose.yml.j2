@@ -1,0 +1,68 @@
+version: "3"
+
+networks:
+  guacamole_backend:
+    external: false
+    name: guacamole-backend
+    internal: true
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  guacd:
+    container_name: guacd
+    image: guacamole/guacd
+    restart: unless-stopped
+    networks:
+    - guacamole_backend
+    - default
+    volumes:
+    - "{{ docker_data }}/guacamole/guacd/drive:/drive:rw"
+    - "{{ docker_data }}/guacamole/guacd/record:/record:rw"
+
+  postgres:
+    image: postgres:13.4
+    container_name: guacamole-database
+    restart: unless-stopped
+    environment:
+      PGDATA: /var/lib/postgresql/data/guacamole
+      POSTGRES_DB: guacamole_db
+    env_file:
+      - .env
+    networks:
+      - guacamole_backend
+    volumes:
+    - "{{ docker_data }}/guacamole/postgres/init:/docker-entrypoint-initdb.d:ro"
+    - "{{ docker_data }}/guacamole/postgres/data:/var/lib/postgresql/data:rw"
+
+  guacamole:
+    image: guacamole/guacamole
+    container_name: guacamole
+    restart: unless-stopped
+    depends_on:
+    - guacd
+    - postgres
+    environment:
+      GUACD_HOSTNAME: guacd
+      POSTGRES_DATABASE: guacamole_db
+      POSTGRES_HOSTNAME: postgres
+    env_file:
+    - .env
+    links:
+    - guacd
+    networks:
+    - guacamole_backend
+    - default
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.guacamole.middlewares: "iframe-header@file,add-guacamole-context"
+      traefik.http.routers.guacamole.tls: "true"
+      traefik.http.routers.guacamole.rule: "Host(`guacamole.{{ domain }}`)"
+      traefik.http.routers.guacamole.service: "guacamole"
+      traefik.http.services.guacamole.loadbalancer.server.port: "8080"
+      traefik.http.middlewares.add-guacamole-context.redirectregex.regex: "^https:\\/\\/([^\\/]+)\\/?$$"
+      traefik.http.middlewares.add-guacamole-context.redirectregex.replacement: "https://$$1/guacamole"

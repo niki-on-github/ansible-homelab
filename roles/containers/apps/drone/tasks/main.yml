@@ -1,0 +1,29 @@
+---
+- block:
+  - name: "Create drone directories"
+    file:
+      path: "{{ item }}"
+      state: directory
+    with_items:
+      - "{{ docker_recipes }}/drone"
+      - "{{ docker_data }}/drone"
+
+  - name: "Generate drone docker-compose environment variables file"
+    template:
+      src: env.j2
+      dest: "{{ docker_recipes }}/drone/.env"
+      force: no
+
+  - name: "Generate drone docker-compose file"
+    template:
+      src: docker-compose.yml.j2
+      dest: "{{ docker_recipes }}/drone/docker-compose.yml"
+
+  - name: "Deploy drone"
+    docker_compose:
+      project_src: '{{ docker_recipes }}/drone'
+      files:
+      - docker-compose.yml
+      remove_orphans: true
+
+  when: drone_gitea_oauth2_client_id is defined and drone_gitea_oauth2_client_secret is defined

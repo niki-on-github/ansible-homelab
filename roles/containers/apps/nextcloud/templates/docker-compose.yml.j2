@@ -1,0 +1,51 @@
+version: "3"
+
+networks:
+  nextcloud_backend:
+    external: false
+    name: nextcloud-backend
+    internal: true
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  nextcloud_database:
+    image: mariadb
+    container_name: nextcloud-database
+    restart: unless-stopped
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --skip-innodb-read-only-compressed
+    networks:
+      - nextcloud_backend
+    volumes:
+      - "{{ docker_data }}/nextcloud/database:/var/lib/mysql"
+    env_file:
+      - .env
+
+  nextcloud_webserver:
+    image: nextcloud
+    container_name: nextcloud
+    restart: unless-stopped
+    depends_on:
+      - nextcloud_database
+    networks:
+      - nextcloud_backend
+      - default
+    volumes:
+      - "{{ docker_data }}/nextcloud/data:/var/www/html"
+    environment:
+      MYSQL_HOST: "nextcloud_database"
+    env_file:
+      - .env
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.nextcloud.middlewares: "iframe-header@file"
+      traefik.http.routers.nextcloud.tls: "true"
+      traefik.http.routers.nextcloud.rule: "Host(`nextcloud.{{ domain }}`)"
+      traefik.http.routers.nextcloud.service: "nextcloud"
+      traefik.http.services.nextcloud.loadbalancer.server.port: "80"
+
+

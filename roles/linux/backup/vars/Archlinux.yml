@@ -1,0 +1,5 @@
+backup_packages:
+  - borg
+  - rsync
+  - par2cmdline
+

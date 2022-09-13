@@ -1,0 +1,72 @@
+---
+- block:
+
+  - name: 'System update #1'
+    pacman:
+      name: 'archlinux-keyring'
+      state: latest
+      update_cache: yes
+
+  - name: 'Install precondition packages'
+    package:
+      name:
+        - python-pip
+        - python-setuptools
+      state: latest
+
+  - name: 'Uninstall conflicting Python Packages'
+    pip:
+      name: "{{ item }}"
+      state: absent
+    with_items:
+      - "paramiko"
+
+  # TODO: we should reboot if we update the kernel
+  # TODO: update often cause problems e.g. VM deployment. But we need lates packages to be able to install other requirred packages with other rules.
+  - name: 'System update #2'
+    pacman:
+      update_cache: no
+      upgrade: yes
+
+  # NOTE: kexec not work with hardened kernel
+  - name: 'Install base packages'
+    package:
+      name:
+        - borg
+        - cpupower
+        - ethtool
+        - htop
+        - jq
+        - kexec-tools
+        - ncdu
+        - neovim
+        - openssl
+        - parted
+        - python-pip
+        - python-setuptools
+        - python-paramiko
+        - rsync
+        - rustup
+        - sysstat
+        - usbutils
+      state: latest
+
+  - name: "Allow user to run sudo pacman without a password"
+    lineinfile:
+      path: /etc/sudoers.d/12-user-install
+      line: '{{ username }} ALL=(ALL) NOPASSWD: /usr/bin/pacman'
+      create: yes
+      validate: 'visudo -cf %s'
+
+  - name: 'rustup install stable for {{ username }} user'
+    shell: |
+      rustup install stable
+    become_user: "{{ username }}"
+
+  - name: 'rustup set stable as default for {{ username }} user'
+    shell: |
+      rustup default stable
+    become_user: "{{ username }}"
+
+
+  become: yes

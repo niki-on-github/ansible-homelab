@@ -1,0 +1,8 @@
+exclude_dockers:
+  - "duplicati"
+  - "librespeed"
+  - "nextcloud"
+  - "public-services"
+  - "scrutiny"
+  - "sftp"
+  - "jenkins"

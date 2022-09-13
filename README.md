@@ -20,8 +20,8 @@ ssh-copy-id -i ~/.ssh/$KEYNAME.pub USER@SERVER_IP
 ### Store Passwords
 
 ```bash
-ansible-vault create ./inventory/group_vars/$GROUP_NAME/$HOSTNAME/secret.yml
-ansible-vault edit ./inventory/group_vars/$GROUP_NAME/$HOSTNAME/secret.yml
+ansible-vault create ./playbooks/host_vars/$INVENTORY_HOSTNAME/secret.yml
+ansible-vault edit ./playbooks/host_vars/$INVENTORY_HOSTNAME/secret.yml
 ```
 
 ## Deploy

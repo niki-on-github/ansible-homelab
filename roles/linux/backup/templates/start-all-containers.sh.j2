@@ -1,0 +1,39 @@
+#!/bin/bash
+
+if [ -f /.dockerenv ]; then
+    # require docker + docker-compose installed in container!
+    DOCKER_COMPOSE_RECIPIES="/source/{{ docker_recipes | basename }}"
+    DOCKER_COMPOSE_RESTORE="/logs"
+    FILTER="duplicati\|traefik\|vpn-services\|deluge\|homeassistant"
+else
+    DOCKER_COMPOSE_RECIPIES="{{ docker_recipes }}"
+    DOCKER_COMPOSE_RESTORE="{{ docker_restore }}"
+    FILTER="traefik\|vpn-services\|deluge\|homeassistant"
+fi
+
+previous_states_file="/tmp/docker.states"
+
+IFS=$'\n'
+for recipe_path in $(find $DOCKER_COMPOSE_RECIPIES -iname "docker-compose.yml" | grep -iv "$FILTER" | xargs -I {} dirname "{}") ; do
+    cd "$recipe_path"
+    service_name=$(basename "$recipe_path")
+    log_name="$(date +"%Y-%m-%d_%H-%M-%S")-start.json"
+
+    start_container=true
+    if [ -f $previous_states_file ]; then
+        if ! grep -q "^$service_name" $previous_states_file ; then
+            echo "Do not start $service_name"
+            start_container=false
+        fi
+    fi
+
+    if $start_container ; then
+        docker compose build --pull 2>&1
+        docker compose up -d --remove-orphans 2>&1
+        mkdir -p $DOCKER_COMPOSE_RESTORE/$service_name
+        docker inspect $(docker compose images -q) 2>&1 > $DOCKER_COMPOSE_RESTORE/$service_name/$log_name
+    fi
+done
+
+unset IFS
+rm $previous_states_file

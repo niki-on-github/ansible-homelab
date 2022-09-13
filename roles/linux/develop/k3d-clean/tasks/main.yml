@@ -1,0 +1,19 @@
+---
+- block:
+
+#   - name: "Get K3S cluster list"
+#     shell:
+#       cmd: "k3d cluster ls -o json | jq .[].name"
+#       chdir: "/opt/k3d"
+#     register: k3d_cluster_list
+
+#   - name: "Delete K3S clusters"
+#     command:
+#       cmd: "k3d cluster delete {{ item }}"
+#       chdir: "/opt/k3d"
+#     with_items: "{{ k3d_cluster_list.stdout_lines }}"
+
+  - name: "Delete all K3S clusters"
+    command:
+      cmd: "k3d cluster delete -a"
+      chdir: "/opt/k3d"

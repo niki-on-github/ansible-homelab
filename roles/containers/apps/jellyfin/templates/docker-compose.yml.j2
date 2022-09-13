@@ -1,0 +1,36 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  jellyfin:
+    image: jellyfin/jellyfin:latest
+    container_name: jellyfin
+    user: "{{uid}}:{{gid}}"
+    restart: "unless-stopped"
+    environment:
+      JELLYFIN_PublishedServerUrl: "https://jellyfin.{{ domain }}"
+      TZ: "{{ timezone }}"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.jellyfin.middlewares: "iframe-header@file"
+      traefik.http.routers.jellyfin.tls: "true"
+      traefik.http.routers.jellyfin.rule: "Host(`jellyfin.{{ domain }}`)"
+      traefik.http.routers.jellyfin.service: "jellyfin"
+      traefik.http.services.jellyfin.loadbalancer.server.port: "8096"
+    networks:
+      - default
+    ports:
+      - 7359:7359/udp
+      - 1900:1900/udp
+    volumes:
+      - "{{ docker_data }}/jellyfin:/config"
+      - "{{ docker_temp }}/jellyfin:/cache"
+      - "{{ docker_share }}/jellyfin:/media"
+      - "/etc/localtime:/etc/localtime:ro"

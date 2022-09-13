@@ -1,0 +1,39 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  vaultwarden:
+    image: "vaultwarden/server"
+    container_name: vaultwarden
+    restart: unless-stopped
+    environment:
+      DOMAIN: "https://vaultwarden.{{ domain }}"
+      WEBSOCKET_ENABLED: "true"
+      INVITATIONS_ALLOWED: "false"
+      SIGNUPS_ALLOWED: "false"
+      ADMIN_TOKEN: "{{ webservices_password }}"
+      TZ: "{{ timezone }}"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.vaultwarden.tls: "true"
+      traefik.http.routers.vaultwarden.rule: "Host(`vaultwarden.{{ domain }}`)"
+      traefik.http.routers.vaultwarden.service: "vaultwarden"
+      traefik.http.routers.vaultwarden-websocket.tls: "true"
+      traefik.http.routers.vaultwarden-websocket.rule: "Host(`vaultwarden.{{ domain }}`) && Path(`/notifications/hub`)"
+      traefik.http.routers.vaultwarden-websocket.service: "vaultwarden-websocket"
+      traefik.http.services.vaultwarden.loadbalancer.server.port: "80"
+      traefik.http.services.vaultwarden-websocket.loadbalancer.server.port: "3012"
+      traefik.http.routers.vaultwarden.middlewares: "vaultwarden"
+      traefik.http.middlewares.vaultwarden.headers.customFrameOptionsValue: "SAMEORIGIN"
+      traefik.http.middlewares.vaultwarden.headers.contentSecurityPolicy: "frame-ancestors 'self' {{domain}} *.{{domain}} chrome-extension://nngceckbapebfimnlniiiahkandclblb chrome-extension://jbkfoedolllekgbhcbcoahefnbanhhlh moz-extension://* ;"
+    networks:
+      - default
+    volumes:
+      - "{{docker_data}}/vaultwarden:/data:rw"

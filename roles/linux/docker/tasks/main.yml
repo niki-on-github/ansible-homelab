@@ -124,6 +124,14 @@
       name: isolated
       internal: yes
 
+  - name: "Fix docker dns"
+    copy:
+      dest: "/etc/docker/daemon.json"
+      content: |
+        {
+          "dns": ["{{ gateway_ip }}", "8.8.8.8"]
+        }
+
   - name: "Restore {{ docker_home }} from {{ docker_backup }}"
     synchronize:
       src: "{{ docker_backup }}/"
