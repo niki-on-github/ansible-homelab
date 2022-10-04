@@ -1,0 +1,20 @@
+---
+- block:
+
+  - name: 'Stop k3s service'
+    systemd:
+      name: 'k3s'
+      state: 'stopped'
+      daemon_reload: yes
+
+  - name: "Delete k3s cluster"
+    file:
+      state: absent
+      path: /var/lib/rancher/k3s/
+
+  - name: "Delete reserved IPs"
+    file:
+      state: absent
+      path: /var/lib/cni/networks/cbr0/
+
+  become: true

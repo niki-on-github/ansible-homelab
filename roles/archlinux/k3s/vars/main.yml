@@ -1,0 +1,21 @@
+k3s_packages:
+  - helm
+  - kubectl
+  - k9s
+  - coreutils
+  - jq
+  - sops
+  - age
+  - open-iscsi
+  - util-linux
+  - gawk
+  - grep
+  - curl
+  - bash
+  - nfs-utils
+  - prometheus-node-exporter
+
+k3s_aur_packages:
+  - k3s-bin
+  - flux-bin
+  - go-task-bin

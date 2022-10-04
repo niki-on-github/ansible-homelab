@@ -10,6 +10,8 @@ services:
     image: gitea/gitea:1
     container_name: gitea
     restart: unless-stopped
+    # In addition to the environment variables, any settings in `app.ini` can be set or overridden with an environment variable of the form: `GITEA__SECTION_NAME__KEY_NAME`.
+    # These settings are applied each time the docker container starts.
     environment:
       USER_UID: "{{uid}}"
       USER_GID: "{{gid}}"
@@ -22,6 +24,8 @@ services:
       ROOT_URL: "https://git.{{ domain }}/"
       DISABLE_REGISTRATION: "true"
       REQUIRE_SIGNIN_VIEW: "true"
+      GITEA__webhook__ALLOWED_HOST_LIST: "*"
+      GITEA__webhook__SKIP_TLS_VERIFY: "true"
     labels:
       com.centurylinklabs.watchtower.enable: "true"
       traefik.enable: "true"

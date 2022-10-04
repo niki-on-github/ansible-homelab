@@ -1,0 +1,11 @@
+---
+- hosts: archlinux
+  roles:
+    # - role: archlinux/precondition
+    # - role: archlinux/ssh-agent
+    # - role: linux/docker
+    # - role: linux/certificate
+    - role: linux/develop/k3s-clean
+    # - role: containers/apps/nfs
+    - role: archlinux/k3s
+

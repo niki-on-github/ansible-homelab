@@ -42,6 +42,7 @@
       issuer: {{ca_cert_result.issuer}}
       subject_alt_name: {{ca_cert_result.subject_alt_name}}
 
+
 - block:
   # Arch Linux
 
@@ -56,20 +57,42 @@
       name: "ca-certificates-utils"
       state: latest
 
+  - name: "Copy CA cert to /etc/ca-certificates/trust-source/anchors"
+    copy:
+      src: "{{ certs_path }}/self-signed-ca-cert.crt"
+      dest: /etc/ca-certificates/trust-source/anchors/self-signed-ca-cert.crt
+      owner: root
+      group: root
+      remote_src: true
+
+  - name: "Add ca to /etc/ssl/certs/ca-certificates.crt"
+    command:
+      cmd: "update-ca-trust"
+
   when: ansible_facts['distribution'] == 'Archlinux'
   become: true
 
-- name: "Copy CA cert to /etc/ca-certificates/trust-source/anchors"
-  copy:
-    src: "{{ certs_path }}/self-signed-ca-cert.crt"
-    dest: /etc/ca-certificates/trust-source/anchors/self-signed-ca-cert.crt
-    owner: root
-    group: root
-    remote_src: true
-  become: true
 
-- name: "Add ca to /etc/ssl/certs/ca-certificates.crt"
-  command:
-    cmd: "update-ca-trust"
-  become: true
+- block:
+  # Ubuntu
+
+  - name: 'Install certificates dependencies'
+    package:
+      name: "ca-certificates"
+      state: latest
+
+  - name: "Copy CA cert to /usr/local/share/ca-certificates"
+    copy:
+      src: "{{ certs_path }}/self-signed-ca-cert.crt"
+      dest: /usr/local/share/ca-certificates/self-signed-ca-cert.crt
+      owner: root
+      group: root
+      remote_src: true
+
+  - name: "Add ca to /etc/ssl/certs/ca-certificates.crt"
+    command:
+      cmd: "update-ca-certificates"
+
+    when: ansible_facts['distribution'] == 'Ubuntu'
+    become: true
 

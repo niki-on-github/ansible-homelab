@@ -1,4 +1,5 @@
 exclude_dockers:
+  - "adguardhome"
   - "duplicati"
   - "librespeed"
   - "nextcloud"
@@ -6,3 +7,5 @@ exclude_dockers:
   - "scrutiny"
   - "sftp"
   - "jenkins"
+  - "nfs"
+  - "ftp"

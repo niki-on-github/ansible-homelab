@@ -1,0 +1,45 @@
+---
+- name: "Create ardguardhome directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/ardguardhome"
+    - "{{ docker_data }}/ardguardhome"
+    - "{{ docker_data }}/ardguardhome/work"
+    - "{{ docker_data }}/ardguardhome/conf"
+
+- block:
+  # Ubuntu
+
+  - name: "Create /etc/systemd/resolved.conf.d"
+    file:
+      path: "/etc/systemd/resolved.conf.d"
+      state: directory
+
+  - name: "Disable DNSStubListener in resolved"
+    copy:
+      dest: "/etc/systemd/resolved.conf.d/nodnsstub.conf"
+      content: |
+        [Resolve]
+        DNSStubListener=no
+
+  - name: 'Restart resolved-systemd service'
+    systemd:
+      name: 'resolved'
+      state: 'restarted'
+
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  become: true
+
+- name: "Generate ardguardhome docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/ardguardhome/docker-compose.yml"
+
+- name: "Deploy ardguardhome"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/ardguardhome'
+    files:
+    - docker-compose.yml
+    remove_orphans: true

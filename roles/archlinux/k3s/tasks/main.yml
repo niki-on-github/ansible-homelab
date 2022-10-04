@@ -13,8 +13,6 @@
       loop_var: role_var
     with_items:
       - k3s_cluster_secret
-      - flux_repo_ip
-      - flux_repo_ssh_hostname
       - flux_repo_ssh_url
       - flux_repo_private_key
 
@@ -26,35 +24,68 @@
 
   - name: 'Install kubernetes packages from arch repositories'
     package:
-      name: "{{ k3d_packages }}"
+      name: "{{ k3s_packages }}"
       state: latest
+
+  - name: 'Enable iscsid systemd service'
+    systemd:
+      name: 'iscsid'
+      state: 'started'
+      enabled: 'yes'
+
+  - name: 'Enable prometheus-node-exporter systemd service'
+    systemd:
+      name: 'prometheus-node-exporter'
+      state: 'started'
+      enabled: 'yes'
 
   - name: 'Install kubernetes AUR packages'
     kewlfft.aur.aur:
-      name: "{{ k3d_aur_packages }}"
+      name: "{{ k3s_aur_packages }}"
     become_user: "{{ username }}"
 
-  - name: 'Create k3d directories'
+  - name: "Generate k3s service env file"
+    template:
+      src: k3s.service.env.j2
+      dest: "/etc/systemd/system/k3s.service.env"
+
+  - name: "Set default k3s start configuration"
+    lineinfile:
+      path: /usr/lib/systemd/system/k3s.service
+      regexp: '^ExecStart='
+      line: ExecStart=/usr/bin/k3s server --disable=traefik,local-storage,metrics-server
+
+  - name: 'Enable k3s systemd service'
+    systemd:
+      name: 'k3s'
+      state: 'started'
+      enabled: 'yes'
+      daemon_reload: yes
+
+  - name: 'Create k3s directories'
     file:
       dest: "{{ item }}"
       state: directory
       owner: "{{ username }}"
       recurse: no
     with_items:
-       - "/opt/k3d"
-       - "/opt/k3d/data"
-       - "/opt/k3d/.age"
+       - "/opt/k3s"
+       - "/opt/k3s/.age"
 
-  - name: "Generate k3d cluster-config"
-    template:
-      src: cluster-config.yaml.j2
-      dest: "/opt/k3d/cluster-config.yaml"
-      owner: "{{ username }}"
+  - name: "Get longhorn storage dir stat"
+    stat:
+      path: /var/lib/longhorn
+    register: longhorn_dir
 
-  - name: "Add domain to /etc/hosts"
-    lineinfile:
-      path: /etc/hosts
-      line: "127.0.0.1 {{ domain }}"
+  - name: "Btrfs check"
+    shell:
+      cmd: cat /proc/mounts | grep " / " | grep -q "btrfs"
+    register: btrfs_check
+
+  - name: "Create /var/lib/longhorn btrfs subvolume"
+    shell:
+      cmd: btrfs subvolume create /var/lib/longhorn
+    when: not longhorn_dir.stat.exists and btrfs_check.rc == 0
 
   become: yes
 
@@ -62,7 +93,7 @@
 - block:
   # user
 
-  - name: 'Create k3d directories'
+  - name: 'Create k3s directories'
     file:
       dest: "{{ item }}"
       state: directory
@@ -72,27 +103,35 @@
        - "/home/{{ username }}/.kube"
        - "/home/{{ username }}/.config/sops/age"
 
+  - name: "Copy k3s config to user directory"
+    copy:
+      src: "/etc/rancher/k3s/k3s.yaml"
+      dest: "/home/{{ username }}/.kube/config"
+      owner: "{{ username }}"
+      remote_src: true
+    become: yes
+
   - name: "Get age key stat"
     stat:
-      path: "/opt/k3d/.age/sops.agekey"
+      path: "/opt/k3s/.age/sops.agekey"
     register: flux_secret_key
 
   - name: "Generate age key"
     command:
       cmd: age-keygen -o sops.agekey
-      chdir: "/opt/k3d/.age"
+      chdir: "/opt/k3s/.age"
     when: not flux_secret_key.stat.exists
 
   - name: "Get Public Key"
     shell:
-      cmd: grep "public key" /opt/k3d/.age/sops.agekey | cut -d ':' -f 2 | tr -d ' '
-      chdir: "/opt/k3d/.age"
+      cmd: grep "public key" /opt/k3s/.age/sops.agekey | cut -d ':' -f 2 | tr -d ' '
+      chdir: "/opt/k3s/.age"
     register: flux_age_public_key
 
   - name: "Get Private Key"
     shell:
-      cmd: grep "AGE-SECRET-KEY" /opt/k3d/.age/sops.agekey
-      chdir: "/opt/k3d/.age"
+      cmd: grep "AGE-SECRET-KEY" /opt/k3s/.age/sops.agekey
+      chdir: "/opt/k3s/.age"
     register: flux_age_private_key
 
   - name: "Add age key to /home/{{ username }}/.config/sops/age/keys.txt"
@@ -101,50 +140,19 @@
       line: "{{ flux_age_private_key.stdout }}"
       create: true
 
-  - name: "Get K3S cluster list"
-    command:
-      cmd: "k3d cluster list"
-      chdir: "/opt/k3d"
-    register: k3d_cluster_list
-
-  - name: "Deploy K3S cluster"
-    command:
-      cmd: "k3d cluster create --config cluster-config.yaml"
-      chdir: "/opt/k3d"
-    when: not k3d_cluster_name in k3d_cluster_list.stdout
-
   - name: "Clone flux repository"
     git:
       repo: "{{ flux_repo_ssh_url }}"
-      dest: "/opt/k3d/infra"
+      dest: "/opt/k3s/gitops"
       clone: yes
       update: yes
       force: yes
       accept_hostkey: yes
       key_file: "{{ flux_repo_private_key }}"
 
-  #NOTE: We set secret in taskfile of flux repo!
-
   - name: "Create kubernetes certs secret"
     shell:
       cmd: "kubectl -n ingress create secret generic certs --dry-run=client --from-file=tls.crt=./{{ domain }}.crt --from-file=tls.key=./{{ domain }}.key -o yaml > domain-certs.yaml"
       chdir: "{{ certs_path }}"
 
-  # TODO: Secret/ingress/certs validation error: error decoding from json: illegal base64 data at input byte 3
-  # - name: "Encrypt flux certs secret"
-  #   shell:
-  #     cmd: "sops --age={{ flux_age_public_key.stdout }} --encrypt --encrypted-regex '^(data|stringData)$' domain-certs.yaml > domain-certs.sops.yaml"
-  #     chdir: "{{ certs_path }}"
-
-  # NOTE: does not work cant resolve the git url!!
-  # - name: "Flux Bootstrap"
-  #   shell:
-  #     cmd: "go-task cluster:install"
-  #     chdir: "/opt/k3d/infra"
-
-  # - name: "Get flux status"
-  #   command:
-  #     cmd: flux get all
-  #   register: flux_status
-
-
+  #NOTE: We set secret in taskfile of flux repo!

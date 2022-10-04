@@ -3,11 +3,12 @@
   roles:
     # - role: linux/docker
     # - role: linux/backup
-    - role: linux/certificate
+    # - role: linux/certificate
     # - role: containers/infrastructure/all
     # - role: containers/services/all
     # - role: containers/apps/all
     # - role: containers/infrastructure/authelia
-    - role: containers/apps/gitea
+    # - role: containers/apps/gitea
     - role: containers/apps/drone
+    # - role: containers/apps/nfs
 

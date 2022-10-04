@@ -4,7 +4,7 @@
     - role: linux/docker
     - role: linux/backup
     - role: linux/certificate
-    - role: containers/infrastructure/all
+    - role: containers/core/all
     - role: containers/services/all
     - role: containers/apps/all
 

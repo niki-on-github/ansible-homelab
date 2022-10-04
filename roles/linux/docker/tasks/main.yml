@@ -85,7 +85,7 @@
       append: 'yes'
 
   - name: 'Enable docker systemd service'
-    ansible.builtin.systemd:
+    systemd:
       name: 'docker'
       state: 'started'
       enabled: 'yes'
@@ -158,7 +158,7 @@
        - "{{ docker_restore }}"
 
   - name: 'Restart docker systemd service to apply changes'
-    ansible.builtin.systemd:
+    systemd:
       name: 'docker'
       state: 'restarted'
       daemon_reload: yes

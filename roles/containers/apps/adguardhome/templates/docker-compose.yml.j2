@@ -1,0 +1,40 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+
+  adguardhome:
+    image: adguard/adguardhome
+    container_name: adguardhome
+    restart: unless-stopped
+    # bind to server_ip required to get dns working or other docker containers
+    ports:
+      - "{{ server_ip }}:53:53/tcp"
+      - "{{ server_ip }}:53:53/udp"
+      - "{{ server_ip }}:784:784/udp"
+      - "{{ server_ip }}:853:853/tcp"
+    volumes:
+      - "{{docker_data}}/adguardhome/work:/opt/adguardhome/work"
+      - "{{docker_data}}/adguardhome/conf:/opt/adguardhome/conf"
+    networks:
+      - default
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.adguard.middlewares: "iframe-header@file"
+      traefik.http.routers.adguard.tls: "true"
+      traefik.http.routers.adguard.rule: "Host(`adguard.{{ domain }}`)"
+      traefik.http.routers.adguard.service: "adguard"
+      traefik.http.services.adguard.loadbalancer.server.port: "80"
+      traefik.http.routers.adguard-setup.middlewares: "iframe-header@file"
+      traefik.http.routers.adguard-setup.tls: "true"
+      traefik.http.routers.adguard-setup.rule: "Host(`adguard-setup.{{ domain }}`)"
+      traefik.http.routers.adguard-setup.service: "adguard-setup"
+      traefik.http.services.adguard-setup.loadbalancer.server.port: "3000"
+
