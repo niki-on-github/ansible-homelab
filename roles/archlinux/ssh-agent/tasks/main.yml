@@ -30,3 +30,37 @@
       state: 'started'
       enabled: 'yes'
       scope: 'user'
+
+
+- block:
+  # root
+
+  - name: "Set SSH_AUTH_SOCK"
+    lineinfile:
+      path: "/root/.pam_environment"
+      line: 'SSH_AUTH_SOCK DEFAULT="${XDG_RUNTIME_DIR}/ssh-agent.socket"'
+      create: true
+
+  - name: 'Create ssh-agent service directory'
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: "root"
+      recurse: no
+    with_items:
+       - "/root/.config"
+       - "/root/.config/systemd"
+       - "/root/.config/systemd/user"
+       - "/root/.config/systemd/user/default.target.wants"
+
+  - name: "Copy ssh-agent service file"
+    copy:
+      src: "files/ssh-agent.service"
+      dest: "/root/.config/systemd/user/ssh-agent.service"
+
+  - name: 'Enable ssh-agent systemd service'
+    systemd:
+      name: 'ssh-agent'
+      state: 'started'
+      enabled: 'yes'
+      scope: 'user'

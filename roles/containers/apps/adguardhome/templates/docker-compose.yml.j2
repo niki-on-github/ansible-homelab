@@ -11,7 +11,7 @@ services:
     image: adguard/adguardhome
     container_name: adguardhome
     restart: unless-stopped
-    # bind to server_ip required to get dns working or other docker containers
+    # bind to server_ip required to get dns working for other docker containers
     ports:
       - "{{ server_ip }}:53:53/tcp"
       - "{{ server_ip }}:53:53/udp"

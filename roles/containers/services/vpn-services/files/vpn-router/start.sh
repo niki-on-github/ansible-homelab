@@ -6,7 +6,7 @@ VPN_CONFIG_PATH="/config"
 
 if [ ! -f /config.sh ]; then
     cat > /config.sh <<EOF
-RECONNECT_ENABLED=true
+RECONNECT_ENABLED=false
 UPDATE_INTERVAL_SEC=8
 LOWER_THRESHOLD=60000
 UPPER_THRESHOLD=392500

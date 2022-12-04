@@ -1,0 +1,137 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+  backend:
+    external: false
+    name: gitlab-backend
+    internal: true
+
+services:
+  gitlab:
+    image: gitlab/gitlab-ce
+    container_name: 'gitlab'
+    restart: unless-stopped
+    hostname: gitlab
+    environment:
+      GITLAB_OMNIBUS_CONFIG: |
+        external_url 'https://git.{{ domain }}'
+        registry['enable'] = false
+        registry_external_url = "https://gitlab-registry.{{ domain }}"
+        registry['internal_key'] = "{{ registry_internal_key | replace('\n','\\n') }}"
+        nginx['listen_https'] = false
+        nginx['listen_port'] = 80
+        gitlab_rails['db_adapter'] = "postgresql"
+        gitlab_rails['db_database'] = "gitlab"
+        gitlab_rails['db_username'] = "postgres"
+        gitlab_rails['db_password'] = "{{ gitlab_postgres_password }}"
+        gitlab_rails['db_host'] = "gitlab-db"
+        gitlab_rails['registry_enabled'] = true
+        gitlab_rails['registry_host'] = "gitlab-registry.{{ domain }}"
+        gitlab_rails['registry_port'] = 443
+        gitlab_rails['registry_api_url'] = "http://gitlab-registry:5000"
+        gitlab_rails['registry_issuer'] = "gitlab-issuer"
+        gitlab_rails['backup_archive_permissions'] = 0644
+        gitlab_rails['backup_keep_time'] = 1468800
+        gitlab_rails['smtp_enable'] = false
+        gitlab_rails['redis_host'] = "gitlab-redis"
+        gitlab_rails['redis_port'] = 6379
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.git.middlewares: "iframe-header@file"
+      traefik.http.routers.git.tls: "true"
+      traefik.http.routers.git.rule: "Host(`git.{{ domain }}`)"
+      traefik.http.routers.git.service: "git"
+      traefik.http.services.git.loadbalancer.server.port: "80"
+      traefik.tcp.routers.git-ssh.rule: "HostSNI(`*`)"
+      traefik.tcp.routers.git-ssh.entrypoints: "ssh"
+      traefik.tcp.routers.git-ssh.service: "git-ssh"
+      traefik.tcp.services.git-ssh.loadbalancer.server.port: "22"
+    volumes:
+      - "{{docker_data}}/gitlab/gitlab/config:/etc/gitlab"
+      - "{{docker_data}}/gitlab/gitlab/logs:/var/log/gitlab"
+      - "{{docker_data}}/gitlab/gitlab/data:/var/opt/gitlab"
+      - "{{ certs_path }}:/certs"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - backend
+      - default
+    depends_on:
+      - redis
+      - database
+
+  gitlab-runner-01:
+    image: gitlab/gitlab-runner:latest
+    container_name: gitlab-runner-01
+    restart: unless-stopped
+    environment:
+      - CI_SERVER_URL=http://gitlab/
+    volumes:
+      - "{{ docker_data }}/gitlab/runner-01:/etc/gitlab-runner"
+      - "{{ certs_path }}:/certs"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "/etc/localtime:/etc/localtime:ro"
+    networks:
+      - backend
+    depends_on:
+      - gitlab
+
+  database:
+    image: postgres
+    restart: unless-stopped
+    container_name: gitlab-db
+    environment:
+      POSTGRES_USER: "postgres"
+      POSTGRES_PASSWORD: "{{ gitlab_postgres_password }}"
+      POSTGRES_DB: "gitlab"
+    volumes:
+      - "{{ docker_data }}/gitlab/postgres:/var/lib/postgresql/data"
+    networks:
+      - backend
+
+  redis:
+    image: redis
+    restart: unless-stopped
+    container_name: gitlab-redis
+    command:
+      - --loglevel warning
+    volumes:
+      - "{{ docker_data }}/gitlab/redis:/var/lib/redis"
+    networks:
+      - backend
+
+  registry:
+    restart: unless-stopped
+    image: registry:latest
+    container_name: gitlab-registry
+    volumes:
+      - "{{ docker_data }}/gitlab/registry:/registry"
+      - "{{ certs_path }}:/certs"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.gitlab-registry.middlewares: "iframe-header@file"
+      traefik.http.routers.gitlab-registry.tls: "true"
+      traefik.http.routers.gitlab-registry.rule: "Host(`gitlab-registry.{{ domain }}`)"
+      traefik.http.routers.gitlab-registry.service: "gitlab-registry"
+      traefik.http.services.gitlab-registry.loadbalancer.server.port: "5000"
+    networks:
+      - backend
+      - default
+    environment:
+      REGISTRY_LOG_LEVEL: info
+      REGISTRY_STORAGE_DELETE_ENABLED: 'true'
+      REGISTRY_STORAGE_FILESYSTEM_ROOTDIRECTORY: /registry
+      REGISTRY_AUTH_TOKEN_REALM: https://git.{{ domain }}/jwt/auth
+      REGISTRY_AUTH_TOKEN_SERVICE: container_registry
+      REGISTRY_AUTH_TOKEN_ISSUER: gitlab-issuer
+      REGISTRY_AUTH_TOKEN_ROOTCERTBUNDLE: /certs/registry.{{ domain }}.crt
+    depends_on:
+      - gitlab

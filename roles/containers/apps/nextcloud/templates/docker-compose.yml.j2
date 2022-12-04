@@ -1,7 +1,7 @@
 version: "3"
 
 networks:
-  nextcloud_backend:
+  backend:
     external: false
     name: nextcloud-backend
     internal: true
@@ -16,7 +16,7 @@ services:
     restart: unless-stopped
     command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --skip-innodb-read-only-compressed
     networks:
-      - nextcloud_backend
+      - backend
     volumes:
       - "{{ docker_data }}/nextcloud/database:/var/lib/mysql"
     env_file:
@@ -29,7 +29,7 @@ services:
     depends_on:
       - nextcloud_database
     networks:
-      - nextcloud_backend
+      - backend
       - default
     volumes:
       - "{{ docker_data }}/nextcloud/data:/var/www/html"

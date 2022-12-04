@@ -7,10 +7,12 @@
   with_items:
     - "{{ docker_recipes }}/scrutiny"
     - "{{ docker_data }}/scrutiny"
+    - "{{ docker_data }}/scrutiny/config"
+    - "{{ docker_data }}/scrutiny/database"
 
 - name: "Get hdd/ssd list"
   shell: |
-    lsblk -ido KNAME | tail -n +2
+    lsblk -idno KNAME | sed 's/n1//g'
   register: device_list
 
 - name: "Set device list variable"
@@ -33,11 +35,3 @@
     - docker-compose.yml
     remove_orphans: true
 
-- name: "Wait for scrutiny startup"
-  pause:
-    seconds: 20
-
-- name: "Update device list inside docker"
-  shell:
-    cmd: docker compose exec scrutiny scrutiny-collector-metrics run
-    chdir: "{{ docker_recipes }}/scrutiny"

@@ -1,14 +1,14 @@
 ---
-- name: "Verify that required role variables are defined"
-  assert:
-    that:
-      - "{{ item }} is defined"
-      - "{{ item }} | length > 0"
-      - "{{ item }} != None"
-    fail_msg: "{{ item }} needs to be set!"
-    success_msg: "Required variable {{ item }} is defined"
-  with_items:
-    - authelia_oidc_grafana_secret
+# - name: "Verify that required role variables are defined"
+#   assert:
+#     that:
+#       - "{{ item }} is defined"
+#       - "{{ item }} | length > 0"
+#       - "{{ item }} != None"
+#     fail_msg: "{{ item }} needs to be set!"
+#     success_msg: "Required variable {{ item }} is defined"
+#   with_items:
+#     - authelia_oidc_grafana_secret
 
 - name: "Create authelia directories"
   file:

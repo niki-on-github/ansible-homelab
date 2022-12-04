@@ -14,8 +14,11 @@ k3s_packages:
   - bash
   - nfs-utils
   - prometheus-node-exporter
+  - promtail
 
 k3s_aur_packages:
   - k3s-bin
   - flux-bin
   - go-task-bin
+  - kube-capacity-git
+  - virtctl-bin

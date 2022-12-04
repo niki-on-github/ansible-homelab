@@ -16,6 +16,9 @@
       - flux_repo_ssh_url
       - flux_repo_private_key
 
+- block:
+  # archlinux, root
+
   - name: 'Update archlinux-keyring'
     pacman:
       name: 'archlinux-keyring'
@@ -49,11 +52,12 @@
       src: k3s.service.env.j2
       dest: "/etc/systemd/system/k3s.service.env"
 
+  # https://kubernetes.io/docs/reference/access-authn-authz/admission-controllers/
   - name: "Set default k3s start configuration"
     lineinfile:
       path: /usr/lib/systemd/system/k3s.service
       regexp: '^ExecStart='
-      line: ExecStart=/usr/bin/k3s server --disable=traefik,local-storage,metrics-server
+      line: ExecStart=/usr/bin/k3s server --disable=traefik,local-storage,metrics-server --kube-apiserver-arg='enable-admission-plugins=DefaultStorageClass,DefaultTolerationSeconds,LimitRanger,MutatingAdmissionWebhook,NamespaceLifecycle,NodeRestriction,PersistentVolumeClaimResize,Priority,ResourceQuota,ServiceAccount,TaintNodesByCondition,ValidatingAdmissionWebhook'
 
   - name: 'Enable k3s systemd service'
     systemd:
@@ -62,6 +66,24 @@
       enabled: 'yes'
       daemon_reload: yes
 
+  become: true
+  when: ansible_facts['distribution'] == 'Archlinux'
+
+
+- block:
+  # root
+  - name: 'Enable k3s systemd service'
+    systemd:
+      name: 'k3s'
+      state: 'started'
+      enabled: 'yes'
+      daemon_reload: yes
+
+  become: true
+
+
+- block:
+  # root
   - name: 'Create k3s directories'
     file:
       dest: "{{ item }}"
@@ -81,11 +103,21 @@
     shell:
       cmd: cat /proc/mounts | grep " / " | grep -q "btrfs"
     register: btrfs_check
+    failed_when: false
 
   - name: "Create /var/lib/longhorn btrfs subvolume"
     shell:
       cmd: btrfs subvolume create /var/lib/longhorn
     when: not longhorn_dir.stat.exists and btrfs_check.rc == 0
+
+  - name: 'Create longhorn directories'
+    file:
+      dest: "{{ item }}"
+      state: directory
+      owner: "{{ username }}"
+      recurse: no
+    with_items:
+       - "{{ longhorn_data_dir }}"
 
   become: yes
 
@@ -150,9 +182,24 @@
       accept_hostkey: yes
       key_file: "{{ flux_repo_private_key }}"
 
-  - name: "Create kubernetes certs secret"
+  - name: "Temporary remove password from ca key"
     shell:
-      cmd: "kubectl -n ingress create secret generic certs --dry-run=client --from-file=tls.crt=./{{ domain }}.crt --from-file=tls.key=./{{ domain }}.key -o yaml > domain-certs.yaml"
+      cmd: 'echo "{{ webservices_password }}" | openssl rsa -in ca.key -out ca2.key -passin stdin'
       chdir: "{{ certs_path }}"
 
-  #NOTE: We set secret in taskfile of flux repo!
+  - name: "Create kubernetes ca certs secret"
+    shell:
+      cmd: "kubectl -n networking create secret generic internal-ca --dry-run=client --from-file=tls.crt=./self-signed-ca-cert.crt --from-file=tls.key=./ca2.key -o yaml > ca-certs.yaml"
+      chdir: "{{ certs_path }}"
+
+  - name: "Delete temporary ca key without passphrase"
+    file:
+      state: absent
+      path: "{{ certs_path }}/ca2.key"
+
+  - name: "Encrypt kubernetes ca certs secret"
+    shell:
+      cmd: "sops --age={{ flux_age_public_key.stdout }} --encrypt --encrypted-regex '^(data|stringData)$' --in-place ca-certs.yaml"
+      chdir: "{{ certs_path }}"
+
+  #NOTE: We import the age secret in taskfile of flux repo!

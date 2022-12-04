@@ -94,6 +94,11 @@
     ansible.builtin.meta:
       reset_connection
 
+  when: ansible_facts['distribution'] != "NixOS"
+  become: yes
+
+
+- block:
   - name: "Check if {{ docker_data }} already exists"
     stat:
       path: "{{ docker_data }}"
@@ -164,6 +169,7 @@
       daemon_reload: yes
       enabled: 'yes'
 
+
   become: yes
 
 
@@ -176,3 +182,5 @@
     with_items:
       - "docker"
       - "docker-compose"
+
+  when: ansible_facts['distribution'] != "NixOS"

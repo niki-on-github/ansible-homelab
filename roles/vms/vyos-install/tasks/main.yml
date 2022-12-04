@@ -1,0 +1,68 @@
+---
+- name: "Create VyOS directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ vagrant_recipes }}"
+    - "{{ vagrant_recipes }}/vyos"
+    - "{{ vagrant_recipes }}/vyos/ansible"
+
+- name: "Generate VyOS vagrant file"
+  template:
+    src: Vagrantfile.j2
+    dest: "{{ vagrant_recipes }}/vyos/Vagrantfile"
+
+- name: "Generate VyOS provisioning playbook"
+  template:
+    src: playbook.yml.j2
+    dest: "{{ vagrant_recipes }}/vyos/ansible/playbook.yml"
+
+- name: "Checking if vyos is already provisioned"
+  stat:
+    path: "{{ vagrant_recipes }}/vyos/.vagrant/machines/default/libvirt/private_key"
+  register: provisioning_check
+
+
+- block:
+  # root
+  - name: "Fetch Vagrant Plugin List for root"
+    command: vagrant plugin list
+    environment:
+      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
+    register: vagrant_plugin_list
+    changed_when: "'vyos' not in vagrant_plugin_list.stdout"
+
+  - name: "Install vagrant-vyos plugin for root (this can take some time)"
+    command: vagrant plugin install vagrant-vyos
+    environment:
+      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
+    when: '"vyos" not in vagrant_plugin_list.stdout'
+
+  become: true
+
+- block:
+  # user
+  - name: "Fetch Vagrant Plugin List for user"
+    command: vagrant plugin list
+    environment:
+      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
+    register: vagrant_plugin_list
+    changed_when: "'vyos' not in vagrant_plugin_list.stdout"
+
+  - name: "Install vagrant-vyos plugin for user (this can take some time)"
+    command: vagrant plugin install vagrant-vyos
+    environment:
+      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
+    when: '"vyos" not in vagrant_plugin_list.stdout'
+
+
+# - name: "Deploy VyOS (this can take some time)"
+#   command: vagrant up
+#   args:
+#     chdir: "{{ vagrant_recipes }}/vyos"
+#   environment:
+#     PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
+#   register: vyos_deploy
+#   when: "not provisioning_check.stat.exists"
+#   become: true

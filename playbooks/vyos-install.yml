@@ -1,0 +1,9 @@
+---
+- hosts: archlinux
+  roles:
+    # - role: archlinux/precondition
+    # - role: archlinux/kvm
+    # - role: archlinux/network/kvm-bridge
+    # - role: archlinux/ssh-agent
+    - role: linux/develop/vm-clean
+    - role: vms/vyos-install

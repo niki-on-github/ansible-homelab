@@ -1,0 +1,57 @@
+
+- block:
+  # root
+
+  - name: "Create directories"
+    file:
+      path: "{{ item }}"
+      state: directory
+      owner: "{{ username }}"
+      recurse: no
+    become: true
+    with_items:
+      - "/opt"
+      - "{{ certs_path }}"
+      - "/opt/k3s"
+      - "/opt/k3s/.age"
+
+  - name: "Copy certs"
+    copy:
+      src: "{{ playbook_dir }}/../files/server/certs/"
+      dest: "{{ certs_path }}"
+      owner: "{{ username }}"
+
+  - name: "Copy age key"
+    copy:
+      src: "{{ playbook_dir }}/../files/server/age/"
+      dest: "/opt/k3s/.age"
+      owner: "{{ username }}"
+
+  - name: "Copy home files"
+    copy:
+      src: "{{ playbook_dir }}/../files/server/home/"
+      dest: "/home/{{ username }}"
+      owner: "{{ username }}"
+
+  - name: "Copy ssh key"
+    copy:
+      src: "{{ playbook_dir }}/../files/server/ssh/"
+      dest: "/home/{{ username }}/.ssh"
+      owner: "{{ username }}"
+
+  - name: "Ensure ssh files are 0600"
+    command: find /home/{{ username }}/.ssh -type f -exec chmod 0600 {} \;
+
+- block:
+  # user
+
+  - name: "Clone flux repository"
+    git:
+      repo: "{{ flux_repo_ssh_url }}"
+      dest: "/opt/k3s/gitops"
+      clone: yes
+      update: yes
+      force: yes
+      accept_hostkey: yes
+      key_file: "{{ flux_repo_private_key }}"
+

@@ -1,0 +1,41 @@
+---
+- name: "Create gitlab directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/gitlab"
+    - "{{ docker_data }}/gitlab"
+    - "{{ docker_data }}/gitlab/postgres"
+    - "{{ docker_data }}/gitlab/redis"
+    - "{{ docker_data }}/gitlab/gitlab"
+    - "{{ docker_data }}/gitlab/gitlab/config"
+    - "{{ docker_data }}/gitlab/gitlab/logs"
+    - "{{ docker_data }}/gitlab/gitlab/data"
+    - "{{ docker_data }}/gitlab/runner-01"
+    - "{{ docker_data }}/gitlab/registry"
+
+- name: "Read {{ certs_path }}/registry.{{ domain }}.key"
+  slurp:
+    src: "{{ certs_path }}/registry.{{ domain }}.key"
+  register: slurp_registry_internal_key
+
+- name: "Set fact registry_internal_key"
+  set_fact:
+    registry_internal_key: "{{ slurp_registry_internal_key['content'] | b64decode }}"
+
+- name: "Show registry_internal_key fact"
+  debug:
+    var: registry_internal_key
+
+- name: "Generate gitlab docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/gitlab/docker-compose.yml"
+
+- name: "Deploy gitlab"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/gitlab'
+    files:
+    - docker-compose.yml
+    remove_orphans: true

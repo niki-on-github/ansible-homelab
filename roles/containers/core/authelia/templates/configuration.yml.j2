@@ -81,6 +81,7 @@ identity_providers:
     enable_client_debug_messages: false
     enforce_pkce: public_clients_only
     clients:
+{% if authelia_oidc_grafana_secret is defined %}
     - id: grafana
       secret: {{ authelia_oidc_grafana_secret }}
       public: false
@@ -93,4 +94,5 @@ identity_providers:
       redirect_uris:
         - https://grafana.{{ domain }}/login/generic_oauth
       userinfo_signing_algorithm: none
+{% endif %}
 ...

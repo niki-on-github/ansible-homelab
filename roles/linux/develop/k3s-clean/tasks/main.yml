@@ -1,5 +1,38 @@
 ---
 - block:
+  # user
+
+  - name: "Flux uninstall"
+    shell:
+      cmd: flux uninstall -s
+    ignore_errors: true
+
+  - name: "Delete all deployments"
+    shell:
+      cmd: kubectl delete deployments --all=true -A
+    ignore_errors: true
+
+  - name: "Delete all statefulsets"
+    shell:
+      cmd: kubectl delete statefulsets --all=true -A
+    ignore_errors: true
+
+  - name: "Delete all namespaces"
+    shell:
+      cmd: kubectl delete ns --all=true -A
+    ignore_errors: true
+
+  - name: "Delete all remaining pods"
+    shell:
+      cmd: kubectl get ns | tail -n +2 | cut -d ' ' -f 1 | xargs -I{} kubectl delete pods --all=true --force=true -n {}
+    ignore_errors: true
+
+  - name: "Wait for pods termination"
+    pause:
+      minutes: 1
+
+- block:
+  # root
 
   - name: 'Stop k3s service'
     systemd:
@@ -16,5 +49,33 @@
     file:
       state: absent
       path: /var/lib/cni/networks/cbr0/
+
+  - block:
+    # delete all longhorn volumes
+
+    - name: "Collect longhorn files"
+      find:
+        paths: "{{ longhorn_data_dir }}"
+        hidden: True
+        recurse: True
+      register: collected_files
+
+    - name: "Collect longhorn directories"
+      find:
+        paths: "{{ longhorn_data_dir }}"
+        hidden: True
+        recurse: True
+        file_type: directory
+      register: collected_directories
+
+    - name: "Remove collected longhorn files and directories"
+      file:
+        path: "{{ item.path }}"
+        state: absent
+      with_items: >
+        {{
+          collected_files.files
+          + collected_directories.files
+        }}
 
   become: true

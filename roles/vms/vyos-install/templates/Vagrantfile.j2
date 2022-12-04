@@ -1,0 +1,48 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+require 'yaml'
+
+ENV['VAGRANT_DEFAULT_PROVIDER'] = 'libvirt'
+
+unless Vagrant.has_plugin?("vagrant-libvirt")
+  raise  Vagrant::Errors::VagrantError.new, "vagrant-libvirt plugin is missing. Please install it using 'vagrant plugin install vagrant-libvirt' and rerun 'vagrant up'"
+end
+
+unless Vagrant.has_plugin?("vagrant-vyos")
+  raise  Vagrant::Errors::VagrantError.new, "vagrant-vyos plugin is missing. Please install it using 'vagrant plugin install vagrant-vyos' and rerun 'vagrant up'"
+end
+
+Vagrant.configure("2") do |config|
+
+  config.vm.box = "vyos/current"
+  config.vm.box_check_update = false
+  config.ssh.keep_alive = true
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+  config.ssh.username = 'vyos'
+  config.ssh.password = 'vyos'
+  config.ssh.insert_key = 'true'
+
+  config.vm.network :public_network,
+      :dev => "{{ kvm_bridge_name }}",
+      :mode => "bridge",
+      :type => "bridge"
+
+  config.vm.provider :libvirt do |libvirt|
+    libvirt.cpus = "2"
+    libvirt.cputopology :sockets => '1', :cores => "2", :threads => '1'
+    libvirt.nested = true
+    libvirt.memory = 2048
+    libvirt.machine_virtual_size = 16
+    libvirt.graphics_type = "vnc"
+    libvirt.video_type = "virtio"
+    libvirt.channel :type => 'unix', :target_name => 'org.qemu.guest_agent.0', :target_type => 'virtio'
+    {{ vyos_usb_dev | default('')  }}
+    {{ vyos_pci_dev | default('') | indent(width=4, first=False) }}
+  end
+
+  # config.vm.provision :ansible do |ansible|
+  #   ansible.verbose = "v"
+  #   ansible.playbook = "ansible/playbook.yml"
+  # end
+end

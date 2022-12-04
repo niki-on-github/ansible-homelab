@@ -1,0 +1,4 @@
+username: nix
+uid: "1000"
+gid: "100"
+flux_repo_private_key: "/home/nix/.ssh/archserver01"

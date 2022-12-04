@@ -5,6 +5,7 @@
     package:
       name:
         - cpupower
+        - powertop
       state: latest
 
   - name: "Set CPU governor"

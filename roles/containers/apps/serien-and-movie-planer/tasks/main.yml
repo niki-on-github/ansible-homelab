@@ -1,0 +1,28 @@
+---
+- name: "Create serien-and-movie-planer directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/serien-and-movie-planer"
+    - "{{ docker_data }}/serien-and-movie-planer"
+    - "{{ docker_data }}/serien-and-movie-planer/database"
+
+- name: "Generate serien-and-movie-planer docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/serien-and-movie-planer/docker-compose.yml"
+
+- name: "Generate nextcloud docker-compose environment variables file"
+  template:
+    src: env.j2
+    dest: "{{ docker_recipes }}/serien-and-movie-planer/.env"
+    force: no
+
+- name: "Deploy serien-and-movie-planer"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/serien-and-movie-planer'
+    files:
+    - docker-compose.yml
+    remove_orphans: true
+    build: true

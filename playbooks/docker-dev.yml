@@ -1,14 +1,18 @@
 ---
-- hosts: archlinux, ubuntu
+- hosts: archlinux, ubuntu, nixos
   roles:
     # - role: linux/docker
     # - role: linux/backup
-    # - role: linux/certificate
-    # - role: containers/infrastructure/all
     # - role: containers/services/all
     # - role: containers/apps/all
     # - role: containers/infrastructure/authelia
     # - role: containers/apps/gitea
-    - role: containers/apps/drone
+    # - role: containers/apps/serien-and-movie-planer
     # - role: containers/apps/nfs
+
+    - role: linux/develop/docker-clean
+    - role: linux/docker
+    # - role: linux/certificate
+    - role: containers/core/all
+    - role: containers/apps/gitlab
 

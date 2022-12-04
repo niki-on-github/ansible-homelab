@@ -3,4 +3,6 @@
   roles:
     - role: archlinux/precondition
     - role: archlinux/kvm
+    - role: archlinux/network/kvm-bridge
+    - role: archlinux/ssh-agent
 

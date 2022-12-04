@@ -1,0 +1,20 @@
+---
+- name: "Create http-server directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/http-server"
+    - "{{ docker_share }}/http"
+
+- name: "Generate http-server docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/http-server/docker-compose.yml"
+
+- name: "Deploy http-server"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/http-server'
+    files:
+    - docker-compose.yml
+    remove_orphans: true

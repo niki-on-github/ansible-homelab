@@ -1,0 +1,20 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+  nfs:
+    image: httpd
+    container_name: http-server
+    restart: unless-stopped
+    volumes:
+      - "{{ docker_share }}/http:/usr/local/apache2/htdocs/"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+    ports:
+      - 8080:80
+    networks:
+      - default

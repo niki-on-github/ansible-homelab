@@ -7,7 +7,7 @@ networks:
 
 services:
   scrutiny:
-    image: lscr.io/linuxserver/scrutiny
+    image: ghcr.io/analogj/scrutiny:master-omnibus
     container_name: scrutiny
     restart: unless-stopped
     cap_add:
@@ -18,10 +18,9 @@ services:
       PGID: "{{ gid }}"
       TZ: "{{ timezone }}"
       SCRUTINY_API_ENDPOINT: "http://localhost:8080"
-      SCRUTINY_WEB: "true"
-      SCRUTINY_COLLECTOR: "true"
     volumes:
-      - "{{docker_data}}/scrutiny:/config"
+      - "{{docker_data}}/scrutiny/config:/opt/scrutiny/config"
+      - "{{docker_data}}/scrutiny/database:/opt/scrutiny/influxdb"
       - "/run/udev:/run/udev:ro"
     labels:
       com.centurylinklabs.watchtower.enable: "true"

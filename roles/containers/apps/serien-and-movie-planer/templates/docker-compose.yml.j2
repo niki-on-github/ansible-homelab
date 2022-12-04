@@ -1,0 +1,57 @@
+version: '3.9'
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+  backend:
+    external: false
+    name: serien-and-movie-planer-backend
+    internal: true
+
+services:
+  postgres:
+    image: postgres:15
+    restart: unless-stopped
+    hostname: "planer_database"
+    networks:
+      - backend
+    env_file:
+      - .env
+    volumes:
+      - "{{ docker_data }}/serien-and-movie-planer/database:/var/lib/postgresql/data"
+  frontend:
+    image: ghcr.io/niki-on-github/serien-and-movie-planer:v0.1.1
+    container_name: serien-and-movie-planer
+    restart: unless-stopped
+    networks:
+      - default
+      - backend
+    depends_on:
+      - "postgres"
+    env_file:
+      - .env
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.planer.middlewares: "iframe-header@file,auth@file"
+      traefik.http.routers.planer.tls: "true"
+      traefik.http.routers.planer.rule: "Host(`planer.{{ domain }}`)"
+      traefik.http.routers.planer.service: "planer"
+      traefik.http.services.planer.loadbalancer.server.port: "8888"
+  crawler:
+    image: ghcr.io/niki-on-github/serien-and-movie-crawler:v0.1.1
+    container_name: serien-and-movie-crawler
+    restart: unless-stopped
+    networks:
+      - default
+      - backend
+    depends_on:
+      - "postgres"
+    env_file:
+      - .env
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+

@@ -5,4 +5,5 @@
     - role: linux/docker
     - role: archlinux/kvm
     - role: archlinux/network/kvm-bridge
+    - role: archlinux/ssh-agent
     - role: vms/opnsense-install

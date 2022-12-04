@@ -93,6 +93,6 @@
     command:
       cmd: "update-ca-certificates"
 
-    when: ansible_facts['distribution'] == 'Ubuntu'
-    become: true
+  when: ansible_facts['distribution'] == 'Ubuntu'
+  become: true
 

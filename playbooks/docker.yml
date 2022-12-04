@@ -1,5 +1,5 @@
 ---
-- hosts: archlinux, ubuntu
+- hosts: archlinux, ubuntu, nixos
   roles:
     - role: linux/docker
     - role: linux/backup

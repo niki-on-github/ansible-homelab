@@ -15,6 +15,9 @@
 - name: "Domain Certificate"
   include_tasks: domain.yml
 
+- name: "Registry Certificate"
+  include_tasks: registry.yml
+
 - name: "Create CA folder on ansible host"
   file:
     path: "{{ item }}"
