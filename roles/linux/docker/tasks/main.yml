@@ -1,6 +1,8 @@
 ---
-- block:
-  # root
+- name: "Install Dependencies (root)"
+  when: ansible_facts['distribution'] != "NixOS"
+  become: yes
+  block:
 
   - name: "Print distribution information"
     debug:
@@ -19,8 +21,9 @@
   - name: "Include OS-specific variables"
     include_vars: "{{ ansible_facts['distribution'] }}.yml"
 
-  - block:
-    # Ubuntu
+  - name: "Ubuntu"
+    when: ansible_facts['distribution'] == 'Ubuntu'
+    block:
 
     - name: "Install Docker dependencies"
       package:
@@ -44,10 +47,9 @@
         name: "{{ docker_packages }}"
         state: present
 
-    when: ansible_facts['distribution'] == 'Ubuntu'
-
-  - block:
-    # Arch Linux
+  - name: "Arch Linux"
+    when: ansible_facts['distribution'] == 'Archlinux'
+    block:
 
     - name: 'Update archlinux-keyring'
       pacman:
@@ -64,8 +66,6 @@
       package:
         name: "{{ docker_packages }}"
         state: latest
-
-    when: ansible_facts['distribution'] == 'Archlinux'
 
   - name: 'Install Docker Python Packet for root'
     pip:
@@ -94,11 +94,10 @@
     ansible.builtin.meta:
       reset_connection
 
-  when: ansible_facts['distribution'] != "NixOS"
+
+- name: "Setup docker (root)"
   become: yes
-
-
-- block:
+  block:
   - name: "Check if {{ docker_data }} already exists"
     stat:
       path: "{{ docker_data }}"
@@ -128,6 +127,12 @@
     docker_network:
       name: isolated
       internal: yes
+
+  - name: 'Create /etc/docker directory'
+    file:
+      dest: "/etc/docker"
+      state: directory
+      group: "docker"
 
   - name: "Fix docker dns"
     copy:
@@ -170,11 +175,9 @@
       enabled: 'yes'
 
 
-  become: yes
-
-
-- block:
-  # user
+- name: "Setup docker for user"
+  when: ansible_facts['distribution'] != "NixOS"
+  block:
 
   - name: 'Install Docker Python Packet for user'
     pip:
@@ -183,4 +186,3 @@
       - "docker"
       - "docker-compose"
 
-  when: ansible_facts['distribution'] != "NixOS"

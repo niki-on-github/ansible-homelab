@@ -20,12 +20,12 @@
       - keyCertSign
     country_name: "DE"
     organization_name: "{{ ca_organization_name }}"
-    email_address: "root@{{ domain }}"
-    common_name: "ca.{{ domain }}"
+    email_address: "root@local.lan"
+    common_name: "ca.local.lan"
 
 - name: "Generate a self signed CA certificate"
   community.crypto.x509_certificate:
-    path: "{{ certs_path }}/self-signed-ca-cert.crt"
+    path: "{{ certs_path }}/ca.crt"
     privatekey_path: "{{ certs_path }}/ca.key"
     privatekey_passphrase: "{{ ca_passphrase }}"
     csr_path: "{{ certs_path }}/ca.csr"
@@ -34,7 +34,7 @@
 
 - name: "Show CA cert"
   community.crypto.x509_certificate_info:
-    path: "{{ certs_path }}/self-signed-ca-cert.crt"
+    path: "{{ certs_path }}/ca.crt"
   register: ca_cert_result
 - debug:
     msg: >
@@ -43,8 +43,10 @@
       subject_alt_name: {{ca_cert_result.subject_alt_name}}
 
 
-- block:
-  # Arch Linux
+- name: "Arch Linux"
+  when: ansible_facts['distribution'] == 'Archlinux'
+  become: true
+  block:
 
   - name: 'Update archlinux-keyring'
     pacman:
@@ -59,8 +61,8 @@
 
   - name: "Copy CA cert to /etc/ca-certificates/trust-source/anchors"
     copy:
-      src: "{{ certs_path }}/self-signed-ca-cert.crt"
-      dest: /etc/ca-certificates/trust-source/anchors/self-signed-ca-cert.crt
+      src: "{{ certs_path }}/ca.crt"
+      dest: /etc/ca-certificates/trust-source/anchors/ca.crt
       owner: root
       group: root
       remote_src: true
@@ -69,12 +71,11 @@
     command:
       cmd: "update-ca-trust"
 
-  when: ansible_facts['distribution'] == 'Archlinux'
+
+- name: "Ubuntu"
+  when: ansible_facts['distribution'] == 'Ubuntu'
   become: true
-
-
-- block:
-  # Ubuntu
+  block:
 
   - name: 'Install certificates dependencies'
     package:
@@ -83,8 +84,8 @@
 
   - name: "Copy CA cert to /usr/local/share/ca-certificates"
     copy:
-      src: "{{ certs_path }}/self-signed-ca-cert.crt"
-      dest: /usr/local/share/ca-certificates/self-signed-ca-cert.crt
+      src: "{{ certs_path }}/ca.crt"
+      dest: /usr/local/share/ca-certificates/ca.crt
       owner: root
       group: root
       remote_src: true
@@ -92,7 +93,4 @@
   - name: "Add ca to /etc/ssl/certs/ca-certificates.crt"
     command:
       cmd: "update-ca-certificates"
-
-  when: ansible_facts['distribution'] == 'Ubuntu'
-  become: true
 

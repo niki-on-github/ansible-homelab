@@ -1,4 +1,25 @@
 ---
+- name: "Arch Linux"
+  when: ansible_facts['distribution'] == 'Archlinux'
+  become: true
+  block:
+
+  - name: 'Update archlinux-keyring'
+    pacman:
+      name: 'archlinux-keyring'
+      state: latest
+      update_cache: yes
+
+  - name: 'Install certificates dependencies'
+    package:
+      name: "python-cryptography"
+      state: latest
+
+- name: "Set fact ca_passphrase"
+  set_fact:
+    ca_passphrase: "{{ webservices_password }}"
+  when: ca_passphrase is not defined
+
 - name: "Create certs directories"
   file:
     path: "{{ item }}"
@@ -8,6 +29,45 @@
   become: true
   with_items:
     - "{{ certs_path }}"
+
+- name: "Check if ca.key exists"
+  stat:
+    path: "{{ playbook_dir }}/../files/CA/ca.key"
+  delegate_to: localhost
+  register: local_ca_key
+
+- name: "Copy existing ca.key"
+  copy:
+    src: "{{ playbook_dir }}/../files/CA/ca.key"
+    dest: "{{ certs_path }}/ca.key"
+    owner: "{{ username }}"
+  when: local_ca_key.stat.exists
+
+- name: "Check if ca.csr exists"
+  stat:
+    path: "{{ playbook_dir }}/../files/CA/ca.csr"
+  delegate_to: localhost
+  register: local_ca_csr
+
+- name: "Copy existing ca.csr"
+  copy:
+    src: "{{ playbook_dir }}/../files/CA/ca.csr"
+    dest: "{{ certs_path }}/ca.csr"
+    owner: "{{ username }}"
+  when: local_ca_csr.stat.exists
+
+- name: "Check if ca.crt exists"
+  stat:
+    path: "{{ playbook_dir }}/../files/CA/ca.crt"
+  delegate_to: localhost
+  register: local_ca_crt
+
+- name: "Copy existing ca.crt"
+  copy:
+    src: "{{ playbook_dir }}/../files/CA/ca.crt"
+    dest: "{{ certs_path }}/ca.crt"
+    owner: "{{ username }}"
+  when: local_ca_crt.stat.exists
 
 - name: "CA Certificate"
   include_tasks: ca.yml
@@ -27,8 +87,26 @@
   with_items:
     - "{{ playbook_dir }}/../files/CA"
 
-- name: "Download self signed CA certificate to ansible host"
+- name: "Download ca.key to ansible host"
   fetch:
-    src: "{{ certs_path }}/self-signed-ca-cert.crt"
+    src: "{{ certs_path }}/ca.key"
+    dest: "{{ playbook_dir }}/../files/CA/ca.key"
+    flat: yes
+
+- name: "Download ca.crt to ansible host"
+  fetch:
+    src: "{{ certs_path }}/ca.crt"
+    dest: "{{ playbook_dir }}/../files/CA/ca.crt"
+    flat: yes
+
+- name: "Download ca.csr to ansible host"
+  fetch:
+    src: "{{ certs_path }}/ca.csr"
+    dest: "{{ playbook_dir }}/../files/CA/ca.csr"
+    flat: yes
+
+- name: "Download self signed CA certificate to ansible host (mkcert)"
+  fetch:
+    src: "{{ certs_path }}/ca.crt"
     dest: "{{ playbook_dir }}/../files/CA/rootCA.pem"
     flat: yes

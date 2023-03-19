@@ -91,8 +91,8 @@
       owner: "{{ username }}"
       recurse: no
     with_items:
-       - "/opt/k3s"
-       - "/opt/k3s/.age"
+       - "{{ k3s_home }}"
+       - "{{ k3s_home }}/.age"
 
   - name: "Get longhorn storage dir stat"
     stat:
@@ -134,6 +134,13 @@
     with_items:
        - "/home/{{ username }}/.kube"
        - "/home/{{ username }}/.config/sops/age"
+       - "/home/{{ username }}/.config/k9s"
+
+  - name: "Copy k9s config to user directory"
+    copy:
+      src: "k9s/config.yml"
+      dest: "/home/{{ username }}/.config/k9s/config.yml"
+      owner: "{{ username }}"
 
   - name: "Copy k3s config to user directory"
     copy:
@@ -145,25 +152,25 @@
 
   - name: "Get age key stat"
     stat:
-      path: "/opt/k3s/.age/sops.agekey"
+      path: "{{ k3s_home }}/.age/sops.agekey"
     register: flux_secret_key
 
   - name: "Generate age key"
     command:
       cmd: age-keygen -o sops.agekey
-      chdir: "/opt/k3s/.age"
+      chdir: "{{ k3s_home }}/.age"
     when: not flux_secret_key.stat.exists
 
   - name: "Get Public Key"
     shell:
-      cmd: grep "public key" /opt/k3s/.age/sops.agekey | cut -d ':' -f 2 | tr -d ' '
-      chdir: "/opt/k3s/.age"
+      cmd: "grep 'public key' {{ k3s_home }}/.age/sops.agekey | cut -d ':' -f 2 | tr -d ' '"
+      chdir: "{{ k3s_home }}/.age"
     register: flux_age_public_key
 
   - name: "Get Private Key"
     shell:
-      cmd: grep "AGE-SECRET-KEY" /opt/k3s/.age/sops.agekey
-      chdir: "/opt/k3s/.age"
+      cmd: "grep 'AGE-SECRET-KEY' {{ k3s_home }}/.age/sops.agekey"
+      chdir: "{{ k3s_home }}/.age"
     register: flux_age_private_key
 
   - name: "Add age key to /home/{{ username }}/.config/sops/age/keys.txt"
@@ -175,7 +182,7 @@
   - name: "Clone flux repository"
     git:
       repo: "{{ flux_repo_ssh_url }}"
-      dest: "/opt/k3s/gitops"
+      dest: "{{ k3s_home }}/gitops"
       clone: yes
       update: yes
       force: yes
@@ -189,7 +196,7 @@
 
   - name: "Create kubernetes ca certs secret"
     shell:
-      cmd: "kubectl -n networking create secret generic internal-ca --dry-run=client --from-file=tls.crt=./self-signed-ca-cert.crt --from-file=tls.key=./ca2.key -o yaml > ca-certs.yaml"
+      cmd: "kubectl -n networking create secret generic internal-ca --dry-run=client --from-file=tls.crt=./ca.crt --from-file=tls.key=./ca2.key -o yaml > ca-certs.yaml"
       chdir: "{{ certs_path }}"
 
   - name: "Delete temporary ca key without passphrase"

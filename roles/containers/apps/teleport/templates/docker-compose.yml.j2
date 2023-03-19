@@ -1,0 +1,39 @@
+version: "3"
+
+networks:
+  default:
+    external: true
+    name: docker-bridge
+
+services:
+
+  teleport:
+    image: public.ecr.aws/gravitational/teleport:{{ teleport_version }}
+    container_name: teleport
+    hostname: "teleport.{{ domain }}"
+    networks:
+      - default
+    environment:
+      SSL_CERT_FILE: "/certs/ca.crt"
+    ports:
+      - "3023:3023"
+      - "3024:3024"
+      - "3025:3025"
+      - "3080:3080"
+    volumes:
+      - "{{ certs_path }}:/certs"
+      - "{{ docker_data }}/teleport/config:/etc/teleport"
+      - "{{ docker_data }}/teleport/data:/var/lib/teleport"
+    labels:
+      com.centurylinklabs.watchtower.enable: "true"
+      traefik.enable: "true"
+      traefik.docker.network: "docker-bridge"
+      traefik.constraints: "{{ traefik_constraints_local_services }}"
+      traefik.http.routers.teleport.middlewares: "iframe-header@file"
+      traefik.http.routers.teleport.tls: "true"
+      traefik.http.routers.teleport.rule: "Host(`teleport.{{ domain }}`)"
+      traefik.http.routers.teleport.service: "teleport"
+      traefik.http.services.teleport.loadbalancer.server.port: "3080"
+      traefik.http.services.teleport.loadbalancer.server.scheme: "https"
+      traefik.http.services.teleport.loadbalancer.serverstransport: "ignore-self-signed@file"
+

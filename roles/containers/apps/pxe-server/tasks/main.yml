@@ -5,12 +5,6 @@
     state: directory
   with_items:
     - "{{ docker_recipes }}/pxe-server"
-    - "{{ docker_recipes }}/pxe-server/container"
-
-- name: "Generate pxe-server Dockerfile"
-  template:
-    src: Dockerfile.j2
-    dest: "{{ docker_recipes }}/pxe-server/container/Dockerfile"
 
 - name: "Generate pxe-server docker-compose file"
   template:

@@ -3,6 +3,7 @@ docker_deps:
   - 'python'
   - 'python-pip'
   - 'python-yaml'
+  - 'python-setuptools'
 
 docker_packages:
   - 'docker'

@@ -1,68 +1,75 @@
 ---
-- name: "Create VyOS directories"
+- name: "Create libvirt directories"
   file:
     path: "{{ item }}"
     state: directory
   with_items:
-    - "{{ vagrant_recipes }}"
-    - "{{ vagrant_recipes }}/vyos"
-    - "{{ vagrant_recipes }}/vyos/ansible"
+    - "{{ libvirt_home }}"
+    - "{{ libvirt_vms }}"
 
-- name: "Generate VyOS vagrant file"
-  template:
-    src: Vagrantfile.j2
-    dest: "{{ vagrant_recipes }}/vyos/Vagrantfile"
-
-- name: "Generate VyOS provisioning playbook"
-  template:
-    src: playbook.yml.j2
-    dest: "{{ vagrant_recipes }}/vyos/ansible/playbook.yml"
-
-- name: "Checking if vyos is already provisioned"
+- name: "Check if vyos image {{ libvirt_vms }}/{{ vyos_qcow2_filename }} exists"
   stat:
-    path: "{{ vagrant_recipes }}/vyos/.vagrant/machines/default/libvirt/private_key"
-  register: provisioning_check
-
+    path: "{{ libvirt_vms }}/{{ vyos_qcow2_filename }}"
+  register: stat_vyos_image
 
 - block:
-  # root
-  - name: "Fetch Vagrant Plugin List for root"
-    command: vagrant plugin list
-    environment:
-      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
-    register: vagrant_plugin_list
-    changed_when: "'vyos' not in vagrant_plugin_list.stdout"
+  - name: "Generate VyOS image (this may take a while)"
+    command:
+      cmd: "docker run -t --rm --privileged -v /dev:/dev -v /tmp:/output --pull=always ghcr.io/niki-on-github/vyos-qemu-images:dev"
 
-  - name: "Install vagrant-vyos plugin for root (this can take some time)"
-    command: vagrant plugin install vagrant-vyos
-    environment:
-      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
-    when: '"vyos" not in vagrant_plugin_list.stdout'
+  - name: "Rename VyOS image"
+    shell:
+      cmd: "mv -fv /tmp/vyos-*-qemu.qcow2 {{ libvirt_vms }}/{{ vyos_qcow2_filename }}"
 
+  - name: "Ensure VyOS image permissions"
+    file:
+      path: "{{ libvirt_vms }}/{{ vyos_qcow2_filename }}"
+      owner: "{{ uid }}"
+      group: "{{ gid }}"
+      mode: "0755"
+
+  when: not stat_vyos_image.stat.exists
   become: true
 
-- block:
-  # user
-  - name: "Fetch Vagrant Plugin List for user"
-    command: vagrant plugin list
-    environment:
-      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
-    register: vagrant_plugin_list
-    changed_when: "'vyos' not in vagrant_plugin_list.stdout"
+- name: "Start default network"
+  shell:
+    cmd: virsh --connect qemu:///system net-start default
+  failed_when: false
 
-  - name: "Install vagrant-vyos plugin for user (this can take some time)"
-    command: vagrant plugin install vagrant-vyos
-    environment:
-      PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
-    when: '"vyos" not in vagrant_plugin_list.stdout'
+- name: "Set autostart for default network"
+  shell:
+    cmd: virsh --connect qemu:///system net-autostart default
 
+# NOTE: delete with `virsh --connect qemu:///system undefine vyos`
+- name: "Check if VyOS VM is already created"
+  shell:
+    cmd: virsh --connect qemu:///system list --name | grep -q "^vyos$"
+  register: vyos_vm
+  failed_when: false
 
-# - name: "Deploy VyOS (this can take some time)"
-#   command: vagrant up
-#   args:
-#     chdir: "{{ vagrant_recipes }}/vyos"
-#   environment:
-#     PATH: '/root/.nix-profile/bin:/nix/var/nix/profiles/default/bin:{{ ansible_env.PATH }}'
-#   register: vyos_deploy
-#   when: "not provisioning_check.stat.exists"
-#   become: true
+- name: "Create VyOS VM"
+  shell:
+    cmd: >
+      virt-install -n vyos \
+       --connect "qemu:///system" \
+       --ram 2048 \
+       --vcpus 2 \
+       --os-variant debian10 \
+       --network network=default \
+       --graphics vnc \
+       --hvm \
+       --virt-type kvm \
+       --disk path={{ libvirt_vms }}/{{ vyos_qcow2_filename }},bus=virtio \
+       --import \
+       --autostart \
+       --noautoconsole
+  when: vyos_vm.rc != 0
+
+- name: "Start VyOS VM"
+  community.libvirt.virt:
+    name: vyos
+    state: running
+
+- name: "Show Post Install Message"
+  ansible.builtin.debug:
+    msg: "Use `virsh --connect qemu:///system console vyos` to connect to vm with default user `vyos` and password `vyos`"

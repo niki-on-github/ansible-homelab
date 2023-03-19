@@ -1,3 +1,2 @@
-ca_passphrase: "{{ webservices_password }}"
 ca_organization_name: "Homelab CA"
 domain_organization_name: "Homelab"

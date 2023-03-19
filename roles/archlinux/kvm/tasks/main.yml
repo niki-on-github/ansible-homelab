@@ -24,6 +24,7 @@
       name:
         - ansible-core
         - bridge-utils
+        - cdrtools
         - cockpit
         - cockpit-machines
         - cockpit-pcp
@@ -41,6 +42,7 @@
         - python-yaml
         - qemu-full
         - swtpm
+        - terraform
         - virt-install
       state: latest
 

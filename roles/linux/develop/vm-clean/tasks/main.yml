@@ -1,5 +1,5 @@
 ---
-- name: "Find VMs"
+- name: "Find vagrant VMs"
   find:
     paths: "{{ vagrant_recipes }}"
     recurse: no
@@ -7,7 +7,7 @@
     file_type: "directory"
   register: vms_to_delete
 
-- name: "Remove VM"
+- name: "Remove vagrant VM"
   shell:
     cmd: vagrant destroy -f >/dev/null 2>&1
     chdir: "{{ item.path }}"
@@ -15,7 +15,7 @@
   ignore_errors: true
   become: yes
 
-- name: "Delete VM directory"
+- name: "Delete vagrant VM directory"
   file:
     state: absent
     path: "{{ item.path }}"

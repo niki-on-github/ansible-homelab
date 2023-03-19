@@ -21,7 +21,7 @@ services:
     volumes:
       - "{{ docker_data }}/serien-and-movie-planer/database:/var/lib/postgresql/data"
   frontend:
-    image: ghcr.io/niki-on-github/serien-and-movie-planer:v0.1.1
+    image: ghcr.io/niki-on-github/serien-and-movie-planer:latest
     container_name: serien-and-movie-planer
     restart: unless-stopped
     networks:
@@ -42,7 +42,7 @@ services:
       traefik.http.routers.planer.service: "planer"
       traefik.http.services.planer.loadbalancer.server.port: "8888"
   crawler:
-    image: ghcr.io/niki-on-github/serien-and-movie-crawler:v0.1.1
+    image: ghcr.io/niki-on-github/serien-and-movie-crawler:latest
     container_name: serien-and-movie-crawler
     restart: unless-stopped
     networks:

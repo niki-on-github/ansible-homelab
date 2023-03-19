@@ -1,8 +1,8 @@
 ---
 
-- block:
-  # root
-
+- name: "Docker Cleanup"
+  become: yes
+  block:
   - name: Get running containers
     docker_host_info:
       containers: yes
@@ -30,6 +30,7 @@
   - name: Delete {{ docker_home }}
     file:
       state: absent
-      path: "{{docker_home}}"
+      path: "{{ docker_home }}"
+    failed_when: false  # if we use a seperate btrfs subvolume this will fail
 
-  become: yes
+

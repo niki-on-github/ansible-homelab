@@ -24,7 +24,7 @@ docker compose exec gitlab-runner-01 gitlab-runner register \
     --executor "docker" \
     --docker-network-mode "docker-bridge" \
     --docker-image "docker:stable" \
-    --tls-ca-file /cert/self-signed-ca-cert.crt \
+    --tls-ca-file /cert/ca.crt \
     --config="/etc/gitlab-runner/config.toml"
 ```
 

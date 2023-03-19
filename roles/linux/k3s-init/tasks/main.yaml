@@ -10,10 +10,9 @@
       recurse: no
     become: true
     with_items:
-      - "/opt"
       - "{{ certs_path }}"
-      - "/opt/k3s"
-      - "/opt/k3s/.age"
+      - "{{ k3s_home }}"
+      - "{{ k3s_home }}/.age"
 
   - name: "Copy certs"
     copy:
@@ -24,7 +23,7 @@
   - name: "Copy age key"
     copy:
       src: "{{ playbook_dir }}/../files/server/age/"
-      dest: "/opt/k3s/.age"
+      dest: "{{ k3s_home }}/.age"
       owner: "{{ username }}"
 
   - name: "Copy home files"
@@ -48,7 +47,7 @@
   - name: "Clone flux repository"
     git:
       repo: "{{ flux_repo_ssh_url }}"
-      dest: "/opt/k3s/gitops"
+      dest: "{{ k3s_home }}/gitops"
       clone: yes
       update: yes
       force: yes

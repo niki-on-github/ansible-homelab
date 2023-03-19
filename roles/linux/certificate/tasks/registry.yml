@@ -18,7 +18,7 @@
   community.crypto.x509_certificate:
     path: "{{ certs_path }}/registry.{{ domain }}.crt"
     csr_path: "{{ certs_path }}/registry.{{ domain }}.csr"
-    ownca_path: "{{ certs_path }}/self-signed-ca-cert.crt"
+    ownca_path: "{{ certs_path }}/ca.crt"
     ownca_privatekey_path: "{{ certs_path }}/ca.key"
     ownca_privatekey_passphrase: "{{ ca_passphrase }}"
     ownca_not_after: "+1825d"

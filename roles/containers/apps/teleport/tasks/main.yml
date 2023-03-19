@@ -1,0 +1,68 @@
+---
+- name: "Create teleport directories"
+  file:
+    path: "{{ item }}"
+    state: directory
+  with_items:
+    - "{{ docker_recipes }}/teleport"
+    - "{{ docker_data }}/teleport"
+    - "{{ docker_data }}/teleport/config"
+    - "{{ docker_data }}/teleport/data"
+
+- name: "Generate teleport docker-compose file"
+  template:
+    src: docker-compose.yml.j2
+    dest: "{{ docker_recipes }}/teleport/docker-compose.yml"
+
+- name: "Generate teleport config file"
+  template:
+    src: teleport.yaml.j2
+    dest: "{{ docker_data }}/teleport/config/teleport.yaml"
+
+- name: "check if teleport config exists"
+  stat:
+    path: "{{ docker_data }}/teleport/config/teleport.yaml"
+  register: teleport_config
+
+- name: "Create default teleport config"
+  command: "docker run -h teleport.{{ domain }} -t --rm --entrypoint /bin/sh -v {{ docker_data }}/teleport/config:/etc/teleport public.ecr.aws/gravitational/teleport:{{ teleport_version }} -c 'teleport configure > /etc/teleport/teleport.yaml'"
+  when: not teleport_config.stat.exists
+
+- name: "Deploy teleport"
+  docker_compose:
+    project_src: '{{ docker_recipes }}/teleport'
+    files:
+    - docker-compose.yml
+    remove_orphans: true
+  register: deploy_teleport
+
+- name: "Wait for teleport start"
+  pause:
+    seconds: 10
+  when: deploy_teleport.changed
+
+- name: "Create default teleport config"
+  command:
+    cmd: "docker compose exec -T teleport tctl users add admin --roles=editor,access --logins=root"
+    chdir: "{{ docker_recipes }}/teleport"
+  failed_when: false
+  register: teleport_user
+
+- name: "print user registration url"
+  debug:
+    msg: "{{ teleport_user.stdout }}"
+  when: teleport_user.rc == 0
+
+- name: "print user registration errors"
+  debug:
+    msg: "{{ teleport_user.stderr }}"
+
+- name: "fetch teleport status"
+  command:
+    cmd: "docker compose exec -T teleport tctl status"
+    chdir: "{{ docker_recipes }}/teleport"
+  register: teleport_status
+
+- name: "print teleport status"
+  debug:
+    msg: "{{ teleport_status.stdout }}"

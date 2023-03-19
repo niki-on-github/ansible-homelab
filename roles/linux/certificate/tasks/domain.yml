@@ -11,14 +11,15 @@
     organization_name: "{{ domain_organization_name }}"
     email_address: "root@{{ domain }}"
     common_name: "{{ domain }}"
-    subject_alt_name: 'DNS:{{ domain }},DNS:*.{{ domain }}'
+    # NOTE: Certificate Signing Request with pattern `*.*.xyz.com` do not work only a single `*` is allowed!
+    subject_alt_name: 'DNS:{{ domain }},DNS:*.{{ domain }},DNS:*.teleport.{{ domain }}'
     # force: true # if you change values use force to override existing sign request!
 
 - name: "Generate an domain server certificate signed with your own CA certificate"
   community.crypto.x509_certificate:
     path: "{{ certs_path }}/{{ domain }}.crt"
     csr_path: "{{ certs_path }}/{{ domain }}.csr"
-    ownca_path: "{{ certs_path }}/self-signed-ca-cert.crt"
+    ownca_path: "{{ certs_path }}/ca.crt"
     ownca_privatekey_path: "{{ certs_path }}/ca.key"
     ownca_privatekey_passphrase: "{{ ca_passphrase }}"
     ownca_not_after: "+1825d"

@@ -1,0 +1,35 @@
+version: v3
+teleport:
+  nodename: teleport.{{ domain }}
+  data_dir: /var/lib/teleport
+  log:
+    output: stderr
+    severity: INFO
+    format:
+      output: text
+  ca_pin: ""
+  diag_addr: ""
+auth_service:
+  enabled: "yes"
+  listen_addr: 0.0.0.0:3025
+  public_addr: teleport.{{ domain }}:3025
+  proxy_listener_mode: multiplex
+ssh_service:
+  enabled: "yes"
+  commands:
+  - name: hostname
+    command: [hostname]
+    period: 1m0s
+proxy_service:
+  enabled: "yes"
+  listen_addr: 0.0.0.0:3023
+  public_addr: teleport.{{ domain }}:443
+  ssh_public_addr: teleport.{{ domain }}:3023
+  tunnel_listen_addr: 0.0.0.0:3024
+  tunnel_public_addr: teleport.{{ domain }}:3024
+  web_listen_addr: 0.0.0.0:3080
+  https_keypairs_reload_interval: 10s
+  https_keypairs:
+    - key_file: /certs/{{ domain }}.key
+      cert_file: /certs/{{ domain }}.crt
+  acme: {}

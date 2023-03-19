@@ -1,6 +1,7 @@
 ---
-- block:
-  # root
+- name: "Install backup service (root)"
+  become: true
+  block:
 
   - name: "Print distribution information"
     debug:
@@ -8,6 +9,7 @@
 
   - name: "Include OS-specific variables"
     include_vars: "{{ ansible_facts['distribution'] }}.yml"
+    when: ansible_facts['distribution'] != 'NixOS'
 
   - name: 'Create backup directories'
     file:
@@ -38,6 +40,7 @@
       update_cache: yes
       name: "{{ backup_packages }}"
       state: latest
+    when: ansible_facts['distribution'] != 'NixOS'
 
   - name: "Create backup service config"
     template:
@@ -81,5 +84,3 @@
       state: started
       enabled: true
       daemon_reload: true
-
-  become: yes
