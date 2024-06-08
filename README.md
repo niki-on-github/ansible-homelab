@@ -1,5 +1,9 @@
 # Ansible Homelab
 
+
+> [!WARNING]  
+> This repository is no longer used by me and has been replaced by my [nixos-k3s](https://github.com/niki-on-github/nixos-k3s) repository.
+
 This repo contains the Ansible playbooks and configuration used to manage and automate my arch based homelab. Feel free to look around. Be aware that I have configured my environment to fit my workflow.
 
 ## Setup
